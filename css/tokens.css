@@ -12,6 +12,16 @@
   --border: #D9CFBC;
   --danger: #A12D2D;
 
+  /* Status colors (admin panel badges) — mirror the status/* variables in Figma */
+  --status-success-bg: #E3EBD3;
+  --status-success-text: #3E4A2F;
+  --status-warning-bg: #F6E3B8;
+  --status-warning-text: #6B4D0E;
+  --status-danger-bg: #F3D6D2;
+  --status-danger-text: #8E2A20;
+  --status-info-bg: #DCE6EA;
+  --status-info-text: #2D4F5E;
+
   --font-display: 'Fraunces', Georgia, 'Times New Roman', serif;
   --font-body: 'DM Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
 

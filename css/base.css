@@ -111,3 +111,12 @@ button { cursor: pointer; }
   html { scroll-behavior: auto; }
   * { transition: none !important; }
 }
+
+/* ---------- Product group (variants such as flavors) ---------- */
+.product-card--group .product-card__body { gap: 2px; }
+.variants { display: grid; margin: 8px 0 0; padding: 0; list-style: none; }
+.variant-row {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  padding: 6px 0; border-top: 1px solid var(--border);
+}
+.variant-row__label { font-weight: 500; }

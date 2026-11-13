@@ -15,7 +15,7 @@ function memoize(load) {
 
 export const getProducts = memoize(async () => {
   const rows = await select('products',
-    'select=id,name,detail,price,category,image_url,featured,sort&active=eq.true&order=sort.asc');
+    'select=id,name,detail,price,category,image_url,featured,sort,variant_group,variant_label&active=eq.true&order=sort.asc');
   return rows.map(({ image_url: image, ...p }) => ({ ...p, image }));
 });
 

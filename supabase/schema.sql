@@ -45,8 +45,24 @@ create table if not exists public.products (
   active     boolean not null default true,
   featured   boolean not null default false,
   sort       integer not null default 0,
+  variant_group text,                   -- optional: products sharing a group show as ONE card with a variant selector
+  variant_label text,                   -- e.g. 'Mora' (required whenever variant_group is set)
   created_at timestamptz not null default now()
 );
+
+-- Idempotent upgrade for projects created before product variants existed.
+alter table public.products add column if not exists variant_group text;
+alter table public.products add column if not exists variant_label text;
+do $$
+begin
+  alter table public.products add constraint products_variant_pair check (
+    (variant_group is null) = (variant_label is null)
+    and (variant_group is null or (char_length(btrim(variant_group)) between 1 and 80
+                                   and char_length(btrim(variant_label)) between 1 and 60))
+  );
+exception when duplicate_object then null;
+end $$;
+
 alter table public.products enable row level security;
 
 drop policy if exists "products: public read" on public.products;

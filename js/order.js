@@ -3,9 +3,11 @@ import { CATEGORIES } from './data/defaults.js';
 import { nextDeliveryDate } from './delivery.js';
 import { bogotaNow, dayName, formatKm, formatLong, formatShort, money } from './format.js';
 import { errorMessage } from './messages.js';
+import { loadLeaflet, OSM_TILES } from './leaflet-loader.js';
 import { feeForKm, roadKm } from './shipping.js';
 import { createOrder, getConfig, getProducts } from './store.js';
-import { bindSteppers, productCard } from './ui/product-card.js';
+import { groupProducts } from './catalog.js';
+import { bindSteppers, productCard, productGroupCard } from './ui/product-card.js';
 
 const $ = (id) => document.getElementById(id);
 const STEPS = ['products', 'details', 'payment', 'confirmation'];
@@ -132,7 +134,9 @@ function renderChips() {
 
 function renderProducts() {
   const shown = products.filter((p) => state.filter === 'all' || p.category === state.filter);
-  productList.replaceChildren(...shown.map(productCard));
+  productList.replaceChildren(...groupProducts(shown).map((item) => (item.type === 'group'
+    ? productGroupCard(item)
+    : productCard(item.product))));
   if (!shown.length) {
     const li = document.createElement('li'); li.className = 'empty muted'; li.textContent = 'Pronto habrá productos aquí.';
     productList.append(li);
@@ -166,21 +170,6 @@ let map = null;
 let marker = null;
 let mapStarted = false;
 
-function loadLeaflet() {
-  if (window.L) return Promise.resolve(window.L);
-  return new Promise((resolve, reject) => {
-    const css = document.createElement('link');
-    css.rel = 'stylesheet';
-    css.href = 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css';
-    document.head.append(css);
-    const script = document.createElement('script');
-    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js';
-    script.onload = () => resolve(window.L);
-    script.onerror = reject;
-    document.head.append(script);
-  });
-}
-
 async function initMap() {
   if (mapStarted) { map?.invalidateSize(); return; }
   mapStarted = true;
@@ -188,9 +177,7 @@ async function initMap() {
     const L = await loadLeaflet();
     const { origin } = config.shipping;
     map = L.map('map', { scrollWheelZoom: false }).setView([origin.lat, origin.lng], 12);
-    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      maxZoom: 19, attribution: '© colaboradores de OpenStreetMap',
-    }).addTo(map);
+    L.tileLayer(OSM_TILES.url, OSM_TILES.options).addTo(map);
     map.on('click', (e) => setLocation(e.latlng.lat, e.latlng.lng));
     if (state.location) { placeMarker(state.location.lat, state.location.lng); map.setView([state.location.lat, state.location.lng], 15); }
   } catch {
