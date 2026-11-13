@@ -64,10 +64,21 @@ function keyValueRow(label, value, className = '') {
 function loadCustomer() {
   try { return JSON.parse(localStorage.getItem(CUSTOMER_KEY) ?? '{}'); } catch { return {}; }
 }
+/** Saves the details only while "remember me" is checked; unchecking it erases them. */
 function saveCustomer() {
   try {
+    if (!$('rememberMe').checked) { localStorage.removeItem(CUSTOMER_KEY); return; }
     localStorage.setItem(CUSTOMER_KEY, JSON.stringify({ ...Object.fromEntries(new FormData(form)), location: state.location }));
   } catch { /* optional convenience */ }
+  $('forgetBtn').hidden = !$('rememberMe').checked;
+}
+
+function forgetCustomer() {
+  try { localStorage.removeItem(CUSTOMER_KEY); } catch { /* nothing to erase */ }
+  form.reset();
+  $('rememberMe').checked = false;
+  $('forgetBtn').hidden = true;
+  $('rememberNote').textContent = 'Listo, borramos tus datos de este dispositivo.';
 }
 
 /* ---------------- navigation ---------------- */
@@ -351,6 +362,11 @@ $('nextBtn').addEventListener('click', () => {
 
 /* ---------------- startup ---------------- */
 const saved = loadCustomer();
+const hasSaved = Object.keys(saved).length > 0;
+$('rememberMe').checked = hasSaved;
+$('forgetBtn').hidden = !hasSaved;
+$('rememberMe').addEventListener('change', saveCustomer);
+$('forgetBtn').addEventListener('click', forgetCustomer);
 for (const [name, value] of Object.entries(saved)) {
   if (name !== 'location' && form.elements[name]) form.elements[name].value = value;
 }

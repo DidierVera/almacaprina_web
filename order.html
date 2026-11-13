@@ -59,6 +59,14 @@
           <label for="f-notes">Indicaciones <span class="hint">(opcional)</span></label>
           <textarea id="f-notes" name="notes" maxlength="300" placeholder="Torre, apartamento, portería, referencia…"></textarea>
         </div>
+        <div class="remember">
+          <label class="remember__check">
+            <input type="checkbox" id="rememberMe">
+            <span>Recordar mis datos en este dispositivo para el próximo pedido</span>
+          </label>
+          <p class="hint" id="rememberNote">Se guardan solo en este navegador, no en nuestros servidores. Puedes borrarlos cuando quieras.</p>
+          <button type="button" class="link-btn" id="forgetBtn" hidden>Olvidar mis datos</button>
+        </div>
       </form>
 
       <section class="geo" aria-labelledby="geo-h">

@@ -96,3 +96,10 @@ body { padding-bottom: 110px; }
   .flow, .step-header .container { max-width: 640px; }
   .step-header h1 { font-size: 2.25rem; }
 }
+
+/* Remember-me block under the delivery form */
+.remember { display: grid; gap: 6px; margin-top: 4px; }
+.remember__check { display: flex; gap: 10px; align-items: flex-start; font-weight: 500; cursor: pointer; }
+.remember__check input { width: 20px; height: 20px; margin-top: 1px; accent-color: var(--brand-olive); flex: none; }
+.remember .hint { margin: 0; font-size: .8125rem; color: var(--text-muted); }
+.remember .link-btn { justify-self: start; background: none; border: 0; padding: 4px 0; font: inherit; font-weight: 600; color: var(--brand-olive); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
