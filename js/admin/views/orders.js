@@ -189,10 +189,15 @@ export async function mount(container) {
 
   async function apply(o, patch, message) {
     const row = await guarded(() => updateOrder(o.id, patch));
-    if (!row) return;
+    if (!row) { // saved nothing (or the response was empty): resync so the screen shows the real state
+      toast('No pudimos confirmar el cambio. Actualizamos la lista para que veas el estado real.', { error: true });
+      refresh(true);
+      return;
+    }
     Object.assign(o, row); // the PATCH response has the columns only, order_items stays as loaded
     render();
     toast(message);
+    refresh(true); // resync with the database in the background (e.g. changes made elsewhere)
   }
 
   const advance = (o) => {
