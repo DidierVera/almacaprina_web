@@ -44,6 +44,7 @@ export async function mount(container) {
   {
     const whatsapp = h('input', { id: 's-wa', value: config.business.whatsapp ?? '', inputMode: 'tel', placeholder: '573001234567' });
     const instagram = h('input', { id: 's-ig', value: config.business.instagram ?? '', placeholder: 'almacaprina.co' });
+    const email = h('input', { id: 's-email', type: 'email', value: config.business.email ?? '', placeholder: 'correo@ejemplo.com' });
     const save = h('button', { class: 'btn btn--primary btn--sm', type: 'submit' }, 'Guardar contacto');
     container.append(h('form', { class: 'panel', onSubmit: async (e) => {
       e.preventDefault();
@@ -51,13 +52,14 @@ export async function mount(container) {
       if (digits.length === 10) digits = `57${digits}`;
       if (digits && (digits.length < 11 || digits.length > 15)) { toast('El WhatsApp debe tener el código de país, por ejemplo 573001234567.', { error: true }); return; }
       const ig = instagram.value.trim().replace(/^@/, '');
-      if (await saveSection(save, 'business', () => ({ ...config.business, whatsapp: digits, instagram: ig }), 'Contacto guardado.')) {
-        config.business = { ...config.business, whatsapp: digits, instagram: ig }; whatsapp.value = digits;
+      if (await saveSection(save, 'business', () => ({ ...config.business, whatsapp: digits, instagram: ig, email: email.value.trim() }), 'Contacto guardado.')) {
+        config.business = { ...config.business, whatsapp: digits, instagram: ig, email: email.value.trim() }; whatsapp.value = digits;
       }
     } },
     h('h2', {}, 'Contacto'),
     h('p', { class: 'hint' }, 'Aparece en la landing y en el botón de WhatsApp de la confirmación.'),
     h('div', { class: 'form-grid' }, field('s-wa', 'WhatsApp', whatsapp, '(con código de país)'), field('s-ig', 'Instagram', instagram, '(sin @)')),
+    h('div', { class: 'form-grid' }, field('s-email', 'Correo de contacto', email, '(opcional, se muestra en la landing)')),
     h('div', { class: 'panel__actions' }, save)));
   }
 

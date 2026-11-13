@@ -24,7 +24,12 @@
     <div class="container hero__inner">
       <nav class="nav" aria-label="Principal">
         <a class="brand brand--logo" href="./" aria-label="Alma Caprina, inicio"><img src="images/logo.png" alt="Alma Caprina · Del campo a tu mesa" width="76" height="60"></a>
-        <a class="nav__link" href="order.html">Pedidos</a>
+        <a class="nav__link nav__link--cta" href="order.html">Pedidos</a>
+        <div class="nav__links">
+          <a class="nav__link" href="#catalog-h">Productos</a>
+          <a class="nav__link" href="#about-h">Nosotros</a>
+          <a class="nav__link" href="#contact-h">Contacto</a>
+        </div>
       </nav>
       <div class="hero__media" role="img" aria-label="Vista de la finca de Alma Caprina entre las montañas"></div>
       <div class="hero__copy">
@@ -57,21 +62,53 @@
       </div>
     </section>
 
-    <section class="section" aria-labelledby="farm-h">
-      <div class="container">
-        <h2 id="farm-h">Del campo a tu mesa</h2>
-        <p class="muted farm__text">Todo empieza con nuestras cabras: la leche con la que hacemos cada queso, yogur y arequipe.</p>
-        <div class="farm__photos">
-          <img src="images/goat-brown.jpg" alt="Una de nuestras cabras asomada entre las guaduas del corral" loading="lazy" width="900" height="1200">
-          <img src="images/goat-tan.jpg" alt="Otra de nuestras cabras, de pelaje canela" loading="lazy" width="900" height="1200">
-        </div>
-      </div>
-    </section>
-
     <section class="section" aria-labelledby="top-h">
       <div class="container">
         <h2 id="top-h">Lo más pedido</h2>
         <ul class="product-list product-list--grid" id="top-list"></ul>
+      </div>
+    </section>
+
+    <section class="section" aria-labelledby="catalog-h">
+      <div class="container">
+        <h2 id="catalog-h">Nuestros productos</h2>
+        <div id="catalog"></div>
+      </div>
+    </section>
+
+    <section class="section" aria-labelledby="about-h" id="about">
+      <div class="container about">
+        <div class="about__copy">
+          <h2 id="about-h">Nosotros</h2>
+          <p>Somos Alma Caprina, una finca de cabras en las montañas de Antioquia. Con la leche de nuestras cabras preparamos a mano quesos, yogur y otros lácteos, y te los llevamos hasta tu casa.</p>
+          <ul class="values">
+            <li class="card"><strong>Hecho a mano</strong><span class="muted">Cada producto se prepara en pequeñas cantidades.</span></li>
+            <li class="card"><strong>Sin conservantes</strong><span class="muted">Leche de cabra, cultivos y sal: lo justo.</span></li>
+            <li class="card"><strong>Del campo a tu mesa</strong><span class="muted">Pides en línea y te lo llevamos en el siguiente día de entrega.</span></li>
+          </ul>
+        </div>
+        <img class="about__img" src="images/farm.jpg" alt="Vista de la finca de Alma Caprina entre las montañas" loading="lazy" width="1280" height="960">
+      </div>
+    </section>
+
+    <section class="section" aria-labelledby="gallery-h" id="gallery">
+      <div class="container">
+        <h2 id="gallery-h">Galería</h2>
+        <div class="gallery">
+          <img src="images/goat-brown.jpg" alt="Una de nuestras cabras asomada entre las guaduas del corral" loading="lazy" width="1200" height="1600">
+          <img src="images/goat-tan.jpg" alt="Otra de nuestras cabras, de pelaje canela" loading="lazy" width="1200" height="1600">
+          <img src="images/products/yogurt-mixed-berries.jpg" alt="Yogur bebible de frutos rojos" loading="lazy" width="1024" height="1024">
+          <img src="images/products/cream-cheese.jpg" alt="Queso crema de cabra" loading="lazy" width="1024" height="1024">
+        </div>
+        <p class="gallery__more" id="galleryMore" hidden><a class="btn btn--secondary" id="galleryLink" target="_blank" rel="noopener">Más fotos en Instagram</a></p>
+      </div>
+    </section>
+
+    <section class="section" aria-labelledby="contact-h" id="contact">
+      <div class="container">
+        <h2 id="contact-h">Contacto</h2>
+        <ul class="contact" id="contactList"></ul>
+        <p class="muted contact__area" id="contactArea"></p>
       </div>
     </section>
   </main>
