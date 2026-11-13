@@ -10,3 +10,8 @@ update public.products set image_url = '/images/products/yogurt-mixed-berries.jp
 
 -- Greek yogurt
 update public.products set image_url = '/images/products/greek-yogurt.jpg' where id = 'greek-yogurt';
+
+-- Ricotta (kept the id aged-cheese from the seed), rulo and feta
+update public.products set image_url = '/images/products/ricotta-cheese.jpg' where id = 'aged-cheese';
+update public.products set image_url = '/images/products/rulo-cheese.jpg'    where id = 'queso-rulo';
+update public.products set image_url = '/images/products/feta-cheese.jpg'    where id = 'queso-feta';
