@@ -1,10 +1,10 @@
-// Carrito persistido en localStorage y compartido entre landing y flujo de pedido.
-const KEY = 'ac:cart';
+// Cart persisted in localStorage and shared between the landing page and the order flow.
+const STORAGE_KEY = 'ac:cart';
 const MAX_QTY = 20;
 
 function load() {
   try {
-    const raw = JSON.parse(localStorage.getItem(KEY) ?? '{}');
+    const raw = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? '{}');
     return Object.fromEntries(Object.entries(raw).filter(([, q]) => Number.isInteger(q) && q > 0));
   } catch {
     return {};
@@ -15,7 +15,7 @@ let items = load();
 const listeners = new Set();
 
 function commit() {
-  try { localStorage.setItem(KEY, JSON.stringify(items)); } catch { /* sin almacenamiento: queda en memoria */ }
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(items)); } catch { /* no storage: stays in memory */ }
   listeners.forEach((fn) => fn(items));
 }
 
@@ -35,7 +35,7 @@ export const cart = {
   MAX_QTY,
 };
 
-// Sincroniza varias pestañas abiertas.
+// Keep several open tabs in sync.
 window.addEventListener('storage', (e) => {
-  if (e.key === KEY) { items = load(); listeners.forEach((fn) => fn(items)); }
+  if (e.key === STORAGE_KEY) { items = load(); listeners.forEach((fn) => fn(items)); }
 });

@@ -1,9 +1,9 @@
-# Secretos: nunca subir llaves ni tokens (el repo es público)
+# Secrets: never commit keys or tokens (the repository is public)
 .env
 .env.*
 *.pem
 
-# Sistema / editor
+# OS / editor
 .DS_Store
 Thumbs.db
 node_modules/

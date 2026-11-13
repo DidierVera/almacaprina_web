@@ -1,7 +1,7 @@
-// Lógica pura de fechas de entrega (sin DOM, sin red). Se reutiliza en el servidor más adelante.
+// Pure delivery-date logic (no DOM, no network). Mirrored by next_delivery_date() in supabase/schema.sql.
 import { addDays, bogotaNow, mondayOf, weekday } from './format.js';
 
-/** Días de la semana (0-6) con entrega en la semana que empieza en `monday`. */
+/** Weekdays (0-6) with delivery in the week starting on `monday`. */
 export function daysForWeek(monday, schedule) {
   return schedule.weeks?.[monday] ?? schedule.defaultDays;
 }
@@ -13,8 +13,8 @@ export function isDeliveryDate(iso, schedule) {
 }
 
 /**
- * Primer día de entrega ESTRICTAMENTE posterior al día del pedido
- * (nunca el mismo día). Si hay hora de corte y ya pasó, el pedido cuenta como del día siguiente.
+ * First delivery date STRICTLY after the order day (never the same day).
+ * If a cutoff hour is set and has passed, the order counts as next day's.
  */
 export function nextDeliveryDate(schedule, now = new Date()) {
   const { iso, hour } = bogotaNow(now);
@@ -26,7 +26,7 @@ export function nextDeliveryDate(schedule, now = new Date()) {
   return null;
 }
 
-/** Próximas `count` fechas de entrega (para mostrar "¿Cuándo llega?"). */
+/** Next `count` delivery dates (for the "when does it arrive?" section). */
 export function upcomingDeliveryDates(schedule, count = 3, now = new Date()) {
   const dates = [];
   let cursor = bogotaNow(now).iso;

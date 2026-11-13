@@ -1,40 +1,56 @@
 import { cart } from './cart.js';
-import { CATEGORIES } from './data/seed.js';
+import { CATEGORIES } from './data/defaults.js';
 import { nextDeliveryDate } from './delivery.js';
-import { bogotaNow, dayName, formatLong, formatShort, km1, money } from './format.js';
+import { bogotaNow, dayName, formatKm, formatLong, formatShort, money } from './format.js';
+import { errorMessage } from './messages.js';
 import { feeForKm, roadKm } from './shipping.js';
 import { createOrder, getConfig, getProducts } from './store.js';
 import { bindSteppers, productCard } from './ui/product-card.js';
 
 const $ = (id) => document.getElementById(id);
-const STEPS = ['productos', 'datos', 'pago', 'confirmacion'];
-const TITLES = { productos: 'Elige tus productos', datos: '¿A dónde te lo llevamos?', pago: '¿Cómo quieres pagar?', confirmacion: '' };
+const STEPS = ['products', 'details', 'payment', 'confirmation'];
+const STEP_TITLES = { products: 'Elige tus productos', details: '¿A dónde te lo llevamos?', payment: '¿Cómo quieres pagar?', confirmation: '' };
+const PAYMENT_LABELS = { transfer: 'Transferencia', cash_on_delivery: 'Contraentrega', online: 'Pago en línea' };
 const CUSTOMER_KEY = 'ac:customer';
 const MAX_PROOF_BYTES = 5 * 1024 * 1024;
 
-const [products, config] = await Promise.all([getProducts(), getConfig()]);
-const byId = new Map(products.map((p) => [p.id, p]));
-cart.entries().forEach(([id]) => { if (!byId.has(id)) cart.set(id, 0); }); // limpia productos que ya no existen
+let products;
+let config;
+try {
+  [products, config] = await Promise.all([getProducts(), getConfig()]);
+} catch (err) {
+  // Without live prices and settings we must not let anyone order: show the problem instead.
+  const li = document.createElement('li');
+  li.className = 'notice notice--error';
+  li.textContent = 'No pudimos cargar los productos. Revisa tu conexión e inténtalo de nuevo.';
+  $('productList').replaceChildren(li);
+  $('nextBtn').disabled = true;
+  throw err;
+}
+const productsById = new Map(products.map((p) => [p.id, p]));
+cart.entries().forEach(([id]) => { if (!productsById.has(id)) cart.set(id, 0); }); // drop products that no longer exist
 
 const state = {
-  step: 'productos',
-  filter: 'todo',
-  loc: null,        // { lat, lng } elegido por el cliente
-  delivery: null,   // { km, estimated, covered, fee }
-  payment: 'transferencia',
+  step: 'products',
+  filter: 'all',
+  location: null,   // { lat, lng } chosen by the customer
+  shipping: null,   // { km, estimated, covered, fee }
+  payment: 'transfer',
   proof: null,
   order: null,
-  geoSeq: 0,
+  geoRequestId: 0,
 };
 
-const form = $('dataForm');
+const form = $('detailsForm');
 
-/* ---------------- utilidades ---------------- */
-const lines = () => cart.entries().map(([id, q]) => ({ p: byId.get(id), q })).filter((l) => l.p);
-const subtotal = () => lines().reduce((s, l) => s + l.p.price * l.q, 0);
-const shippingFee = () => (state.delivery?.covered ? state.delivery.fee : 0);
+/* ---------------- helpers ---------------- */
+const cartLines = () => cart.entries()
+  .map(([id, qty]) => ({ product: productsById.get(id), qty }))
+  .filter((line) => line.product);
+const subtotal = () => cartLines().reduce((sum, l) => sum + l.product.price * l.qty, 0);
+const shippingFee = () => (state.shipping?.covered ? state.shipping.fee : 0);
 
-function kvRow(label, value, className = '') {
+function keyValueRow(label, value, className = '') {
   const row = document.createElement('div');
   if (className) row.className = className;
   const dt = document.createElement('dt'); dt.textContent = label;
@@ -48,18 +64,18 @@ function loadCustomer() {
 }
 function saveCustomer() {
   try {
-    localStorage.setItem(CUSTOMER_KEY, JSON.stringify({ ...Object.fromEntries(new FormData(form)), loc: state.loc }));
-  } catch { /* opcional */ }
+    localStorage.setItem(CUSTOMER_KEY, JSON.stringify({ ...Object.fromEntries(new FormData(form)), location: state.location }));
+  } catch { /* optional convenience */ }
 }
 
-/* ---------------- navegación ---------------- */
+/* ---------------- navigation ---------------- */
 function go(step) { location.hash = step; }
 
 function resolveStep(requested) {
-  let step = STEPS.includes(requested) ? requested : 'productos';
-  if ((step === 'datos' || step === 'pago') && cart.units() === 0) step = 'productos';
-  if (step === 'pago' && !(form.checkValidity() && state.delivery?.covered)) step = 'datos';
-  if (step === 'confirmacion' && !state.order) step = 'productos';
+  let step = STEPS.includes(requested) ? requested : 'products';
+  if ((step === 'details' || step === 'payment') && cart.units() === 0) step = 'products';
+  if (step === 'payment' && !(form.checkValidity() && state.shipping?.covered)) step = 'details';
+  if (step === 'confirmation' && !state.order) step = 'products';
   return step;
 }
 
@@ -67,58 +83,59 @@ function show(requested) {
   const step = resolveStep(requested);
   if (step !== requested) history.replaceState(null, '', `#${step}`);
   state.step = step;
-  const i = STEPS.indexOf(step);
+  const index = STEPS.indexOf(step);
 
   STEPS.forEach((s) => { $(`step-${s}`).hidden = s !== step; });
-  const done = step === 'confirmacion';
-  $('stepHeader').hidden = done;
-  $('bottomBar').hidden = done;
+  const isDone = step === 'confirmation';
+  $('stepHeader').hidden = isDone;
+  $('bottomBar').hidden = isDone;
   $('bottomBar').dataset.step = step;
 
-  if (!done) {
-    $('stepLabel').textContent = `Paso ${i + 1} de 3`;
-    $('progressFill').style.width = `${((i + 1) / 3) * 100}%`;
-    $('progress').setAttribute('aria-valuenow', String(i + 1));
-    $('stepTitle').textContent = TITLES[step];
-    $('nextBtn').textContent = step === 'pago' ? 'Confirmar pedido' : 'Continuar';
+  if (!isDone) {
+    $('stepLabel').textContent = `Paso ${index + 1} de 3`;
+    $('progressFill').style.width = `${((index + 1) / 3) * 100}%`;
+    $('progress').setAttribute('aria-valuenow', String(index + 1));
+    $('stepTitle').textContent = STEP_TITLES[step];
+    $('nextBtn').textContent = step === 'payment' ? 'Confirmar pedido' : 'Continuar';
   }
 
-  if (step === 'datos') { renderDelivery(); initMap(); }
-  if (step === 'pago') renderPayment();
-  if (step === 'confirmacion') renderDone();
+  if (step === 'details') { renderDelivery(); initMap(); }
+  if (step === 'payment') renderPayment();
+  if (step === 'confirmation') renderConfirmation();
   renderBar();
 
   window.scrollTo(0, 0);
-  (done ? $('doneTitle') : $('stepTitle')).focus({ preventScroll: true });
+  (isDone ? $('doneTitle') : $('stepTitle')).focus({ preventScroll: true });
 }
 
 $('backBtn').addEventListener('click', () => {
-  const i = STEPS.indexOf(state.step);
-  if (i <= 0) location.href = './'; else go(STEPS[i - 1]);
+  const index = STEPS.indexOf(state.step);
+  if (index <= 0) location.href = './'; else go(STEPS[index - 1]);
 });
 window.addEventListener('hashchange', () => show(location.hash.slice(1)));
 
-/* ---------------- paso 1: productos ---------------- */
-const list = $('productList');
-bindSteppers(list);
+/* ---------------- step 1: products ---------------- */
+const productList = $('productList');
+bindSteppers(productList);
 
 function renderChips() {
   const present = new Set(products.map((p) => p.category));
-  const cats = CATEGORIES.filter((c) => c.id === 'todo' || present.has(c.id));
-  $('chips').replaceChildren(...cats.map((c) => {
-    const b = document.createElement('button');
-    b.type = 'button'; b.className = 'chip'; b.textContent = c.label;
-    b.setAttribute('aria-pressed', String(c.id === state.filter));
-    b.addEventListener('click', () => { state.filter = c.id; renderChips(); renderProducts(); });
-    return b;
+  const categories = CATEGORIES.filter((c) => c.id === 'all' || present.has(c.id));
+  $('chips').replaceChildren(...categories.map((c) => {
+    const button = document.createElement('button');
+    button.type = 'button'; button.className = 'chip'; button.textContent = c.label;
+    button.setAttribute('aria-pressed', String(c.id === state.filter));
+    button.addEventListener('click', () => { state.filter = c.id; renderChips(); renderProducts(); });
+    return button;
   }));
 }
+
 function renderProducts() {
-  const shown = products.filter((p) => state.filter === 'todo' || p.category === state.filter);
-  list.replaceChildren(...shown.map(productCard));
+  const shown = products.filter((p) => state.filter === 'all' || p.category === state.filter);
+  productList.replaceChildren(...shown.map(productCard));
   if (!shown.length) {
     const li = document.createElement('li'); li.className = 'empty muted'; li.textContent = 'Pronto habrá productos aquí.';
-    list.append(li);
+    productList.append(li);
   }
 }
 
@@ -126,17 +143,16 @@ function renderBar() {
   const units = cart.units();
   $('barCount').textContent = `${units} ${units === 1 ? 'producto' : 'productos'}`;
   $('barTotal').textContent = money(subtotal());
-  if (state.step === 'productos') $('nextBtn').disabled = units === 0;
-  else $('nextBtn').disabled = false;
+  $('nextBtn').disabled = state.step === 'products' && units === 0;
 }
 cart.subscribe(renderBar);
 
-/* ---------------- paso 2: datos, mapa y entrega ---------------- */
+/* ---------------- step 2: details, map and delivery ---------------- */
 function renderDelivery() {
-  const d = nextDeliveryDate(config.schedule);
-  $('deliveryDate').textContent = d ? formatLong(d) : 'Por confirmar';
-  $('deliveryNote').textContent = d
-    ? `Pediste un ${dayName(bogotaNow().iso)}, así que entra en la ruta del ${dayName(d)}. Te avisamos por WhatsApp cuando salgamos.`
+  const date = nextDeliveryDate(config.schedule);
+  $('deliveryDate').textContent = date ? formatLong(date) : 'Por confirmar';
+  $('deliveryNote').textContent = date
+    ? `Pediste un ${dayName(bogotaNow().iso)}, así que entra en la ruta del ${dayName(date)}. Te avisamos por WhatsApp cuando salgamos.`
     : 'Te escribiremos para acordar la fecha de entrega.';
 }
 
@@ -157,11 +173,11 @@ function loadLeaflet() {
     css.rel = 'stylesheet';
     css.href = 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css';
     document.head.append(css);
-    const s = document.createElement('script');
-    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js';
-    s.onload = () => resolve(window.L);
-    s.onerror = reject;
-    document.head.append(s);
+    const script = document.createElement('script');
+    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js';
+    script.onload = () => resolve(window.L);
+    script.onerror = reject;
+    document.head.append(script);
   });
 }
 
@@ -176,13 +192,13 @@ async function initMap() {
       maxZoom: 19, attribution: '© colaboradores de OpenStreetMap',
     }).addTo(map);
     map.on('click', (e) => setLocation(e.latlng.lat, e.latlng.lng));
-    if (state.loc) { putMarker(state.loc.lat, state.loc.lng); map.setView([state.loc.lat, state.loc.lng], 15); }
+    if (state.location) { placeMarker(state.location.lat, state.location.lng); map.setView([state.location.lat, state.location.lng], 15); }
   } catch {
     setGeoStatus('No pudimos cargar el mapa. Usa el botón "Usar mi ubicación".', { error: true });
   }
 }
 
-function putMarker(lat, lng) {
+function placeMarker(lat, lng) {
   if (!map) return;
   if (marker) { marker.setLatLng([lat, lng]); return; }
   marker = window.L.marker([lat, lng], { draggable: true }).addTo(map);
@@ -190,23 +206,23 @@ function putMarker(lat, lng) {
 }
 
 async function setLocation(lat, lng, { pan = false } = {}) {
-  state.loc = { lat, lng };
-  state.delivery = null;
-  putMarker(lat, lng);
+  state.location = { lat, lng };
+  state.shipping = null;
+  placeMarker(lat, lng);
   if (pan && map) map.setView([lat, lng], 15);
-  const seq = ++state.geoSeq;
+  const requestId = ++state.geoRequestId;
   setGeoStatus('Calculando domicilio…');
 
   const { origin, roadFactor, maxKm } = config.shipping;
-  const { km, estimated } = await roadKm(origin, state.loc, { roadFactor });
-  if (seq !== state.geoSeq) return; // el cliente movió el pin mientras calculábamos
+  const { km, estimated } = await roadKm(origin, state.location, { roadFactor });
+  if (requestId !== state.geoRequestId) return; // the customer moved the pin while we were calculating
 
   const result = feeForKm(km, config.shipping);
-  state.delivery = { km, estimated, ...result };
+  state.shipping = { km, estimated, ...result };
   if (result.covered) {
-    setGeoStatus(`Domicilio: ${money(result.fee)} · ${estimated ? '≈ ' : ''}${km1(km)} km desde ${origin.label}`);
+    setGeoStatus(`Domicilio: ${money(result.fee)} · ${estimated ? '≈ ' : ''}${formatKm(km)} km desde ${origin.label}`);
   } else {
-    setGeoStatus(`Tu ubicación queda a ${estimated ? '≈ ' : ''}${km1(km)} km, fuera de nuestra zona de entrega (máximo ${maxKm} km). Escríbenos y vemos cómo ayudarte.`, { error: true });
+    setGeoStatus(`Tu ubicación queda a ${estimated ? '≈ ' : ''}${formatKm(km)} km, fuera de nuestra zona de entrega (máximo ${maxKm} km). Escríbenos y vemos cómo ayudarte.`, { error: true });
   }
   saveCustomer();
 }
@@ -223,43 +239,48 @@ $('locateBtn').addEventListener('click', () => {
 
 form.addEventListener('input', saveCustomer);
 
-/* ---------------- paso 3: pago ---------------- */
+/* ---------------- step 3: payment ---------------- */
 function renderPayment() {
-  const sub = subtotal();
   const fee = shippingFee();
-  const total = sub + fee;
+  const total = subtotal() + fee;
 
   $('summaryLines').replaceChildren(
-    ...lines().map((l) => kvRow(`${l.q} × ${l.p.name}`, money(l.p.price * l.q))),
-    kvRow('Domicilio', money(fee)),
-    kvRow('Total', money(total), 'total'),
+    ...cartLines().map((l) => keyValueRow(`${l.qty} × ${l.product.name}`, money(l.product.price * l.qty))),
+    keyValueRow('Domicilio', money(fee)),
+    keyValueRow('Total', money(total), 'total'),
   );
 
-  const tr = config.payments.transfer;
+  const { transfer, cashOnDelivery } = config.payments;
   $('transferTitle').textContent = `Transfiere ${money(total)} a:`;
-  $('transferSub').textContent = tr.accounts.map((a) => a.label.split(' ')[0]).join(' · ');
+  $('transferSub').textContent = transfer.accounts.map((a) => a.label.split(' ')[0]).join(' · ');
   $('transferAccounts').replaceChildren(
-    ...tr.accounts.map((a) => kvRow(a.label, a.value)),
-    kvRow('Titular', tr.holder),
+    ...transfer.accounts.map((a) => keyValueRow(a.label, a.value)),
+    keyValueRow('Titular', transfer.holder),
   );
-  $('codOption').hidden = !config.payments.cod.enabled;
+  $('transferOption').hidden = !transfer.enabled;
+  $('cashOption').hidden = !cashOnDelivery.enabled;
+
+  // Fall back to an enabled method if the selected one is not available.
+  const available = [transfer.enabled && 'transfer', cashOnDelivery.enabled && 'cash_on_delivery'].filter(Boolean);
+  if (!available.includes(state.payment)) state.payment = available[0] ?? 'transfer';
+  document.querySelector(`input[name="payment"][value="${state.payment}"]`).checked = true;
   syncPaymentUi();
 }
 
 function syncPaymentUi() {
-  $('transferDetail').hidden = state.payment !== 'transferencia';
+  $('transferDetail').hidden = state.payment !== 'transfer' || !config.payments.transfer.enabled;
   $('submitError').hidden = true;
 }
 
-document.querySelectorAll('input[name="payment"]').forEach((r) => r.addEventListener('change', () => {
-  state.payment = r.value;
+document.querySelectorAll('input[name="payment"]').forEach((radio) => radio.addEventListener('change', () => {
+  state.payment = radio.value;
   syncPaymentUi();
 }));
 
 $('proofInput').addEventListener('change', (e) => {
   const file = e.target.files[0];
-  const ok = file && (file.type.startsWith('image/') || file.type === 'application/pdf') && file.size <= MAX_PROOF_BYTES;
-  if (file && !ok) {
+  const valid = file && (file.type.startsWith('image/') || file.type === 'application/pdf') && file.size <= MAX_PROOF_BYTES;
+  if (file && !valid) {
     e.target.value = '';
     state.proof = null;
     showError('El comprobante debe ser una imagen o un PDF de máximo 5 MB.');
@@ -271,82 +292,83 @@ $('proofInput').addEventListener('change', (e) => {
   $('proofSub').textContent = state.proof ? 'Toca para cambiarlo' : 'Foto o PDF de la transferencia';
 });
 
-function showError(msg) {
+function showError(message) {
   const el = $('submitError');
-  el.textContent = msg;
+  el.textContent = message;
   el.hidden = false;
 }
 
-async function submit() {
+async function submitOrder() {
   $('submitError').hidden = true;
-  if (state.payment === 'transferencia' && !state.proof) {
+  if (state.payment === 'transfer' && !state.proof) {
     showError('Adjunta el comprobante de la transferencia para continuar.');
     return;
   }
-  const btn = $('nextBtn');
-  btn.disabled = true;
-  btn.textContent = 'Enviando…';
+  const button = $('nextBtn');
+  button.disabled = true;
+  button.textContent = 'Enviando…';
   try {
     const f = Object.fromEntries(new FormData(form));
     state.order = await createOrder({
       items: cart.entries().map(([id, qty]) => ({ id, qty })),
-      customer: { name: f.name.trim(), phone: f.phone.trim(), email: f.email.trim(), address: f.address.trim(), neighborhood: f.neighborhood.trim(), notes: f.notes.trim() },
-      delivery: { km: state.delivery.km, lat: state.loc.lat, lng: state.loc.lng },
+      customer: {
+        name: f.name.trim(), phone: f.phone.trim(), email: f.email.trim(),
+        address: f.address.trim(), neighborhood: f.neighborhood.trim(), notes: f.notes.trim(),
+      },
+      delivery: { km: state.shipping.km, lat: state.location.lat, lng: state.location.lng },
       payment: { method: state.payment, proof: state.proof },
     });
     cart.clear();
-    go('confirmacion');
+    go('confirmation');
   } catch (err) {
-    showError(err.message || 'No pudimos enviar tu pedido. Inténtalo de nuevo.');
+    showError(errorMessage(err));
   } finally {
-    btn.disabled = false;
-    btn.textContent = 'Confirmar pedido';
+    button.disabled = false;
+    button.textContent = 'Confirmar pedido';
   }
 }
 
-/* ---------------- confirmación ---------------- */
-const PAY_LABEL = { transferencia: 'Transferencia', contraentrega: 'Contraentrega', online: 'Pago en línea' };
-
-function renderDone() {
-  const o = state.order;
-  $('doneSub').textContent = `Pedido #${o.number} · Gracias, ${o.customer.name.split(' ')[0]}`;
+/* ---------------- confirmation ---------------- */
+function renderConfirmation() {
+  const order = state.order;
+  $('doneSub').textContent = `Pedido #${order.number} · Gracias, ${order.customer.name.split(' ')[0]}`;
   const rows = [
-    kvRow('Entrega', formatShort(o.delivery.date)),
-    kvRow('Pago', PAY_LABEL[o.payment.method]),
+    keyValueRow('Entrega', formatShort(order.delivery.date)),
+    keyValueRow('Pago', PAYMENT_LABELS[order.payment.method]),
   ];
-  if (o.payment.method === 'transferencia') rows.push(kvRow('Comprobante', 'En revisión'));
-  rows.push(kvRow('Total', money(o.total), 'total'));
+  if (order.payment.method === 'transfer') rows.push(keyValueRow('Comprobante', 'En revisión'));
+  rows.push(keyValueRow('Total', money(order.total), 'total'));
   $('doneDetail').replaceChildren(...rows);
 
-  const wa = config.business.whatsapp.replace(/\D/g, '');
-  const btn = $('whatsBtn');
-  btn.hidden = !wa;
-  if (wa) btn.href = `https://wa.me/${wa}?text=${encodeURIComponent(`Hola, hice el pedido ${o.number}.`)}`;
+  const whatsapp = config.business.whatsapp.replace(/\D/g, '');
+  const button = $('whatsBtn');
+  button.hidden = !whatsapp;
+  if (whatsapp) button.href = `https://wa.me/${whatsapp}?text=${encodeURIComponent(`Hola, hice el pedido ${order.number}.`)}`;
 }
 
-/* ---------------- botón principal ---------------- */
+/* ---------------- primary button ---------------- */
 $('nextBtn').addEventListener('click', () => {
-  if (state.step === 'productos') { go('datos'); return; }
+  if (state.step === 'products') { go('details'); return; }
 
-  if (state.step === 'datos') {
+  if (state.step === 'details') {
     if (!form.reportValidity()) return;
-    if (!state.loc) { setGeoStatus('Marca tu ubicación en el mapa para calcular el domicilio.', { error: true }); $('locateBtn').focus(); return; }
-    if (!state.delivery) { setGeoStatus('Estamos calculando tu domicilio, un momento…'); return; }
-    if (!state.delivery.covered) return;
+    if (!state.location) { setGeoStatus('Marca tu ubicación en el mapa para calcular el domicilio.', { error: true }); $('locateBtn').focus(); return; }
+    if (!state.shipping) { setGeoStatus('Estamos calculando tu domicilio, un momento…'); return; }
+    if (!state.shipping.covered) return;
     saveCustomer();
-    go('pago');
+    go('payment');
     return;
   }
-  if (state.step === 'pago') submit();
+  if (state.step === 'payment') submitOrder();
 });
 
-/* ---------------- arranque ---------------- */
+/* ---------------- startup ---------------- */
 const saved = loadCustomer();
 for (const [name, value] of Object.entries(saved)) {
-  if (name !== 'loc' && form.elements[name]) form.elements[name].value = value;
+  if (name !== 'location' && form.elements[name]) form.elements[name].value = value;
 }
-if (saved.loc && Number.isFinite(saved.loc.lat) && Number.isFinite(saved.loc.lng)) {
-  setLocation(saved.loc.lat, saved.loc.lng);
+if (saved.location && Number.isFinite(saved.location.lat) && Number.isFinite(saved.location.lng)) {
+  setLocation(saved.location.lat, saved.location.lng);
 }
 
 renderChips();

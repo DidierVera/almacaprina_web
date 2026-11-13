@@ -6,51 +6,58 @@ import { bindSteppers, productCard } from './ui/product-card.js';
 
 const $ = (id) => document.getElementById(id);
 
-const [config, products, top] = await Promise.all([getConfig(), getProducts(), getTopProducts(4)]);
+let config;
+let products;
+let topProducts;
+try {
+  [config, products, topProducts] = await Promise.all([getConfig(), getProducts(), getTopProducts(4)]);
+} catch (err) {
+  $('when').textContent = 'No pudimos cargar la información. Inténtalo de nuevo en un momento.';
+  throw err;
+}
 
-// "Lo más pedido"
-const list = $('top-list');
-list.replaceChildren(...top.map(productCard));
-bindSteppers(list);
+// "Most ordered"
+const topList = $('top-list');
+topList.replaceChildren(...topProducts.map(productCard));
+bindSteppers(topList);
 
-// "¿Cuándo llega?": calculado con el calendario real que defina el administrador.
-// Un pedido hecho hasta el día anterior a una entrega (y después de la entrega anterior) llega en esa entrega.
+// "When does it arrive?": computed from the real calendar the admin defines.
+// An order placed up to the day before a delivery (and after the previous delivery) arrives on that delivery.
 const when = $('when');
 const dates = upcomingDeliveryDates(config.schedule, 3);
-when.replaceChildren(...dates.map((d) => {
+when.replaceChildren(...dates.map((date) => {
   const row = document.createElement('div');
   row.className = 'when__row';
   const left = document.createElement('span');
-  left.textContent = `Pides hasta el ${formatShort(addDays(d, -1)).toLowerCase()}`;
+  left.textContent = `Pides hasta el ${formatShort(addDays(date, -1)).toLowerCase()}`;
   const right = document.createElement('span');
   right.className = 'when__day';
-  right.textContent = formatLong(d);
+  right.textContent = formatLong(date);
   row.append(left, right);
   return row;
 }));
 if (!dates.length) when.textContent = 'Pronto publicaremos las próximas fechas de entrega.';
 
-// Redes
-const social = $('social');
+// Social links
 const { whatsapp, instagram } = config.business;
 const links = [];
 if (whatsapp) links.push(['WhatsApp', `https://wa.me/${whatsapp.replace(/\D/g, '')}`]);
 if (instagram) links.push(['Instagram', `https://www.instagram.com/${instagram}/`]);
-social.replaceChildren(...links.map(([label, href]) => {
+$('social').replaceChildren(...links.map(([label, href]) => {
   const a = document.createElement('a');
   a.href = href; a.textContent = label; a.rel = 'noopener'; a.target = '_blank';
   return a;
 }));
 
-// Barra de carrito
-const byId = new Map(products.map((p) => [p.id, p]));
-function renderBar() {
+// Cart bar
+const productsById = new Map(products.map((p) => [p.id, p]));
+function renderCartBar() {
   const units = cart.units();
   $('cartBar').hidden = units === 0;
   if (!units) return;
-  const total = cart.entries().reduce((s, [id, q]) => s + (byId.get(id)?.price ?? 0) * q, 0);
+  const total = cart.entries().reduce((sum, [id, qty]) => sum + (productsById.get(id)?.price ?? 0) * qty, 0);
   $('cartCount').textContent = `${units} ${units === 1 ? 'producto' : 'productos'}`;
   $('cartTotal').textContent = money(total);
 }
-cart.subscribe(renderBar);
-renderBar();
+cart.subscribe(renderCartBar);
+renderCartBar();

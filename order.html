@@ -25,15 +25,15 @@
   </header>
 
   <main class="container flow">
-    <!-- Paso 1 -->
-    <section id="step-productos" aria-labelledby="stepTitle">
+    <!-- Step 1: products -->
+    <section id="step-products" aria-labelledby="stepTitle">
       <div class="chips" id="chips" role="group" aria-label="Categorías"></div>
       <ul class="product-list" id="productList"></ul>
     </section>
 
-    <!-- Paso 2 -->
-    <section id="step-datos" hidden aria-labelledby="stepTitle">
-      <form id="dataForm" novalidate>
+    <!-- Step 2: contact and delivery details -->
+    <section id="step-details" hidden aria-labelledby="stepTitle">
+      <form id="detailsForm" novalidate>
         <div class="field">
           <label for="f-name">Nombre</label>
           <input id="f-name" name="name" autocomplete="name" required maxlength="80">
@@ -52,8 +52,8 @@
           <input id="f-address" name="address" autocomplete="street-address" required maxlength="140">
         </div>
         <div class="field">
-          <label for="f-hood">Barrio o municipio</label>
-          <input id="f-hood" name="neighborhood" required maxlength="80">
+          <label for="f-neighborhood">Barrio o municipio</label>
+          <input id="f-neighborhood" name="neighborhood" required maxlength="80">
         </div>
         <div class="field">
           <label for="f-notes">Indicaciones <span class="hint">(opcional)</span></label>
@@ -76,13 +76,13 @@
       </div>
     </section>
 
-    <!-- Paso 3 -->
-    <section id="step-pago" hidden aria-labelledby="stepTitle">
+    <!-- Step 3: payment -->
+    <section id="step-payment" hidden aria-labelledby="stepTitle">
       <fieldset class="pay-options">
         <legend class="sr-only">Método de pago</legend>
 
-        <label class="pay-option">
-          <input type="radio" name="payment" value="transferencia" checked>
+        <label class="pay-option" id="transferOption">
+          <input type="radio" name="payment" value="transfer" checked>
           <span><strong>Transferencia</strong><small id="transferSub">Nequi · Bancolombia</small></span>
         </label>
         <div class="card pay-detail" id="transferDetail">
@@ -100,8 +100,8 @@
           <span><strong>Pago en línea</strong><small>Próximamente · tarjeta, PSE o Nequi</small></span>
         </label>
 
-        <label class="pay-option" id="codOption">
-          <input type="radio" name="payment" value="contraentrega">
+        <label class="pay-option" id="cashOption">
+          <input type="radio" name="payment" value="cash_on_delivery">
           <span><strong>Contraentrega</strong><small>Pagas en efectivo o transferencia al recibir</small></span>
         </label>
       </fieldset>
@@ -113,8 +113,8 @@
       <p class="notice notice--error" id="submitError" role="alert" hidden></p>
     </section>
 
-    <!-- Confirmación -->
-    <section id="step-confirmacion" hidden aria-labelledby="stepTitle" class="done">
+    <!-- Confirmation -->
+    <section id="step-confirmation" hidden aria-labelledby="stepTitle" class="done">
       <div class="done__check" aria-hidden="true">✓</div>
       <h2 id="doneTitle" tabindex="-1">¡Pedido recibido!</h2>
       <p class="muted" id="doneSub"></p>
