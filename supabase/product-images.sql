@@ -7,3 +7,6 @@ update public.products set image_url = '/images/products/yogurt-blackberry.jpg' 
 update public.products set image_url = '/images/products/yogurt-mixed-berries.jpg' where id in ('yogurt-bebible-frutos-rojos', 'yogurt-bebible-de-fresa');
 -- Ready for products you create later (set via the panel or here):
 --   /images/products/rulo-cheese.jpg   /images/products/feta-cheese.jpg   /images/products/ricotta-cheese.jpg
+
+-- Greek yogurt
+update public.products set image_url = '/images/products/greek-yogurt.jpg' where id = 'greek-yogurt';
