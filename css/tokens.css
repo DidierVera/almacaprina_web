@@ -1,0 +1,25 @@
+/* Tokens de diseño — espejo de la colección de variables "Alma Caprina" en Figma */
+:root {
+  --bg-cream: #F6F1E7;
+  --surface-white: #FFFFFF;
+  --surface-sand: #EADFC9;
+  --brand-olive: #3E4A2F;
+  --brand-terracotta: #B8613A;
+  --brand-terracotta-dark: #A5532F;
+  --text-ink: #22231C;
+  --text-muted: #6E6A5C;
+  --text-on-dark: #FBF8F2;
+  --border: #D9CFBC;
+  --danger: #A12D2D;
+
+  --font-display: 'Fraunces', Georgia, 'Times New Roman', serif;
+  --font-body: 'DM Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+
+  --radius-sm: 12px;
+  --radius-md: 16px;
+  --radius-lg: 20px;
+  --radius-pill: 999px;
+
+  --gutter: 24px;
+  --shadow-bar: 0 -1px 0 var(--border);
+}

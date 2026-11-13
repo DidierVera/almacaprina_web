@@ -1,0 +1,11 @@
+# Secretos: nunca subir llaves ni tokens (el repo es público)
+.env
+.env.*
+*.pem
+
+# Sistema / editor
+.DS_Store
+Thumbs.db
+node_modules/
+.vscode/*
+!.vscode/extensions.json

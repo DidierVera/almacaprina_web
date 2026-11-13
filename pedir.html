@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Haz tu pedido · Alma Caprina</title>
+  <meta name="theme-color" content="#F6F1E7">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,600;9..144,700&display=swap">
+  <link rel="stylesheet" href="css/tokens.css">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/order.css">
+</head>
+<body>
+  <header class="step-header" id="stepHeader">
+    <div class="container">
+      <div class="step-header__row">
+        <button type="button" class="back" id="backBtn">← Atrás</button>
+        <span class="muted" id="stepLabel">Paso 1 de 3</span>
+      </div>
+      <div class="progress" id="progress" role="progressbar" aria-label="Progreso del pedido" aria-valuemin="0" aria-valuemax="3" aria-valuenow="1"><span id="progressFill"></span></div>
+      <h1 id="stepTitle" tabindex="-1">Elige tus productos</h1>
+    </div>
+  </header>
+
+  <main class="container flow">
+    <!-- Paso 1 -->
+    <section id="step-productos" aria-labelledby="stepTitle">
+      <div class="chips" id="chips" role="group" aria-label="Categorías"></div>
+      <ul class="product-list" id="productList"></ul>
+    </section>
+
+    <!-- Paso 2 -->
+    <section id="step-datos" hidden aria-labelledby="stepTitle">
+      <form id="dataForm" novalidate>
+        <div class="field">
+          <label for="f-name">Nombre</label>
+          <input id="f-name" name="name" autocomplete="name" required maxlength="80">
+        </div>
+        <div class="field">
+          <label for="f-phone">Celular <span class="hint">(WhatsApp)</span></label>
+          <input id="f-phone" name="phone" type="tel" inputmode="tel" autocomplete="tel" required
+                 pattern="[0-9+ ]{10,16}" title="Escribe tu celular, por ejemplo 300 123 4567">
+        </div>
+        <div class="field">
+          <label for="f-email">Correo <span class="hint">(opcional — te enviamos la confirmación)</span></label>
+          <input id="f-email" name="email" type="email" autocomplete="email" maxlength="120">
+        </div>
+        <div class="field">
+          <label for="f-address">Dirección</label>
+          <input id="f-address" name="address" autocomplete="street-address" required maxlength="140">
+        </div>
+        <div class="field">
+          <label for="f-hood">Barrio o municipio</label>
+          <input id="f-hood" name="neighborhood" required maxlength="80">
+        </div>
+        <div class="field">
+          <label for="f-notes">Indicaciones <span class="hint">(opcional)</span></label>
+          <textarea id="f-notes" name="notes" maxlength="300" placeholder="Torre, apartamento, portería, referencia…"></textarea>
+        </div>
+      </form>
+
+      <section class="geo" aria-labelledby="geo-h">
+        <h2 id="geo-h">Ubicación de entrega</h2>
+        <p class="muted">Toca el mapa o arrastra el pin hasta tu casa. Con eso calculamos el domicilio.</p>
+        <button type="button" class="btn btn--secondary" id="locateBtn">Usar mi ubicación</button>
+        <div id="map" class="map" role="application" aria-label="Mapa para marcar la ubicación de entrega"></div>
+        <p class="notice" id="geoStatus" aria-live="polite">Aún no has marcado tu ubicación.</p>
+      </section>
+
+      <div class="delivery-card" id="deliveryCard" aria-live="polite">
+        <p class="eyebrow">TU PEDIDO LLEGA EL</p>
+        <p class="delivery-card__date" id="deliveryDate">—</p>
+        <p id="deliveryNote"></p>
+      </div>
+    </section>
+
+    <!-- Paso 3 -->
+    <section id="step-pago" hidden aria-labelledby="stepTitle">
+      <fieldset class="pay-options">
+        <legend class="sr-only">Método de pago</legend>
+
+        <label class="pay-option">
+          <input type="radio" name="payment" value="transferencia" checked>
+          <span><strong>Transferencia</strong><small id="transferSub">Nequi · Bancolombia</small></span>
+        </label>
+        <div class="card pay-detail" id="transferDetail">
+          <p class="pay-detail__title" id="transferTitle"></p>
+          <dl class="kv" id="transferAccounts"></dl>
+          <label class="proof" for="proofInput" id="proofLabel">
+            <span class="proof__main" id="proofMain">＋ Adjuntar comprobante</span>
+            <span class="proof__sub" id="proofSub">Foto o PDF de la transferencia</span>
+          </label>
+          <input type="file" id="proofInput" accept="image/*,application/pdf" class="sr-only">
+        </div>
+
+        <label class="pay-option pay-option--disabled">
+          <input type="radio" name="payment" value="online" disabled>
+          <span><strong>Pago en línea</strong><small>Próximamente · tarjeta, PSE o Nequi</small></span>
+        </label>
+
+        <label class="pay-option" id="codOption">
+          <input type="radio" name="payment" value="contraentrega">
+          <span><strong>Contraentrega</strong><small>Pagas en efectivo o transferencia al recibir</small></span>
+        </label>
+      </fieldset>
+
+      <section class="card summary" aria-labelledby="sum-h">
+        <h2 id="sum-h">Resumen del pedido</h2>
+        <dl class="kv" id="summaryLines"></dl>
+      </section>
+      <p class="notice notice--error" id="submitError" role="alert" hidden></p>
+    </section>
+
+    <!-- Confirmación -->
+    <section id="step-confirmacion" hidden aria-labelledby="stepTitle" class="done">
+      <div class="done__check" aria-hidden="true">✓</div>
+      <h2 id="doneTitle" tabindex="-1">¡Pedido recibido!</h2>
+      <p class="muted" id="doneSub"></p>
+      <dl class="card kv done__detail" id="doneDetail"></dl>
+      <p class="muted" id="doneNote">Te escribiremos por WhatsApp para confirmar la hora aproximada de entrega.</p>
+      <a class="btn btn--primary btn--block" id="whatsBtn" hidden target="_blank" rel="noopener">Escribir por WhatsApp</a>
+      <a class="btn btn--secondary btn--block" href="./">Volver al inicio</a>
+    </section>
+  </main>
+
+  <div class="bottom-bar" id="bottomBar">
+    <div class="bottom-bar__inner container">
+      <div class="bottom-bar__total" id="barTotalWrap">
+        <span class="muted" id="barCount"></span>
+        <strong id="barTotal"></strong>
+      </div>
+      <button type="button" class="btn btn--primary" id="nextBtn">Continuar</button>
+    </div>
+  </div>
+
+  <script type="module" src="js/order.js"></script>
+</body>
+</html>

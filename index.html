@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Alma Caprina · Productos de cabra de granja</title>
+  <meta name="description" content="Quesos, leche y yogur de cabra hechos a mano. Haz tu pedido y te lo llevamos en el siguiente día de entrega.">
+  <meta name="theme-color" content="#3E4A2F">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,600;9..144,700&display=swap">
+  <link rel="stylesheet" href="css/tokens.css">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/landing.css">
+</head>
+<body>
+  <header class="hero">
+    <div class="container hero__inner">
+      <nav class="nav" aria-label="Principal">
+        <a class="brand" href="./">Alma Caprina</a>
+        <a class="nav__link" href="pedir.html">Pedidos</a>
+      </nav>
+      <div class="hero__media" role="img" aria-label="Cabras y quesos de Alma Caprina"></div>
+      <div class="hero__copy">
+        <h1>Lo natural de la cabra, directo a tu mesa</h1>
+        <p>Quesos, leche y yogur de cabra hechos a mano. Pide hoy y te lo llevamos en el siguiente día de entrega.</p>
+        <a class="btn btn--primary btn--block hero__cta" href="pedir.html">Hacer pedido</a>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section class="section" aria-labelledby="como-h">
+      <div class="container">
+        <h2 id="como-h">Así de fácil</h2>
+        <ol class="steps">
+          <li class="card step"><span class="step__num" aria-hidden="true">1</span><div><h3>Elige</h3><p class="muted">Arma tu pedido con los productos de la semana.</p></div></li>
+          <li class="card step"><span class="step__num" aria-hidden="true">2</span><div><h3>Paga</h3><p class="muted">Transferencia o contraentrega.</p></div></li>
+          <li class="card step"><span class="step__num" aria-hidden="true">3</span><div><h3>Recibe</h3><p class="muted">Te lo llevamos en el siguiente día de entrega.</p></div></li>
+        </ol>
+      </div>
+    </section>
+
+    <section class="section" aria-labelledby="cuando-h">
+      <div class="container">
+        <h2 id="cuando-h">¿Cuándo llega?</h2>
+        <div class="when card--sand" id="when" aria-live="polite">
+          <p class="muted">Cargando próximas entregas…</p>
+        </div>
+        <p class="muted when__note">El día de entrega es siempre posterior al día en que pides.</p>
+      </div>
+    </section>
+
+    <section class="section" aria-labelledby="top-h">
+      <div class="container">
+        <h2 id="top-h">Lo más pedido</h2>
+        <ul class="product-list product-list--grid" id="top-list"></ul>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="container footer__inner">
+      <div>
+        <p class="brand">Alma Caprina</p>
+        <p class="footer__tag">Productos de cabra de granja, con alma.</p>
+      </div>
+      <a class="btn btn--primary" href="pedir.html">Hacer mi pedido</a>
+      <p class="footer__links" id="social"></p>
+    </div>
+  </footer>
+
+  <!-- Barra de carrito: aparece solo si ya hay productos -->
+  <div class="cart-bar" id="cartBar" hidden>
+    <div><span class="muted" id="cartCount"></span><strong id="cartTotal"></strong></div>
+    <a class="btn btn--primary" href="pedir.html">Continuar</a>
+  </div>
+
+  <script type="module" src="js/landing.js"></script>
+</body>
+</html>

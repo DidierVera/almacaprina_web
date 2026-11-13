@@ -1,0 +1,98 @@
+body { padding-bottom: 110px; }
+
+/* ---------- Encabezado de pasos ---------- */
+.step-header { padding: 24px 0 8px; }
+.step-header[hidden] { display: none; }
+.step-header__row { display: flex; justify-content: space-between; align-items: center; font-size: .9375rem; }
+.back { border: 0; background: none; padding: 8px 0; font-weight: 500; }
+.progress { height: 4px; margin: 6px 0 16px; background: var(--surface-sand); border-radius: 4px; overflow: hidden; }
+.progress span { display: block; height: 100%; width: 33%; background: var(--brand-terracotta); transition: width .25s ease; }
+.step-header h1 { font-size: 1.875rem; }
+.step-header h1:focus { outline: none; }
+
+.flow { max-width: 640px; padding-top: 8px; }
+.flow [hidden] { display: none !important; }
+.flow h2 { font-size: 1.25rem; }
+
+/* ---------- Paso 1 ---------- */
+.chips { display: flex; gap: 8px; margin: 12px 0 14px; overflow-x: auto; padding-bottom: 4px; }
+.chip {
+  flex: none; min-height: 40px; padding: 0 16px; border-radius: var(--radius-pill);
+  border: 1.5px solid transparent; background: var(--surface-white); font-weight: 500;
+}
+.chip[aria-pressed="true"] { background: var(--brand-olive); color: var(--text-on-dark); }
+.empty { padding: 24px 0; text-align: center; }
+
+/* ---------- Paso 2 ---------- */
+.geo { display: grid; gap: 12px; margin: 8px 0 20px; }
+.geo .btn { justify-self: start; min-height: 44px; }
+.map { height: 280px; border-radius: var(--radius-md); background: var(--surface-sand); overflow: hidden; z-index: 0; }
+
+.delivery-card { padding: 16px; background: var(--surface-sand); border-radius: var(--radius-md); display: grid; gap: 6px; }
+.eyebrow { font-size: .75rem; letter-spacing: .08em; font-weight: 700; color: var(--text-muted); }
+.delivery-card__date { font-family: var(--font-display); font-size: 1.625rem; font-weight: 600; color: var(--brand-olive); }
+
+/* ---------- Paso 3 ---------- */
+.pay-options { border: 0; padding: 0; margin: 12px 0 0; display: grid; gap: 12px; }
+.pay-option {
+  display: flex; align-items: center; gap: 14px; padding: 16px;
+  background: var(--surface-white); border: 1.5px solid var(--border); border-radius: var(--radius-md); cursor: pointer;
+}
+.pay-option:has(input:checked) { border-color: var(--brand-terracotta); border-width: 2px; padding: 15.5px; }
+.pay-option:has(input:focus-visible) { outline: 3px solid var(--brand-terracotta); outline-offset: 2px; }
+.pay-option--disabled { opacity: .55; cursor: not-allowed; }
+.pay-option input { accent-color: var(--brand-terracotta); width: 20px; height: 20px; flex: none; }
+.pay-option strong { display: block; font-weight: 600; }
+.pay-option small { color: var(--text-muted); font-size: .875rem; }
+
+.card { background: var(--surface-white); border-radius: var(--radius-md); }
+.pay-detail { padding: 16px; display: grid; gap: 12px; }
+.pay-detail__title { font-weight: 700; }
+
+.kv { display: grid; gap: 10px; margin: 0; }
+.kv > div { display: flex; justify-content: space-between; gap: 16px; }
+.kv dt { color: inherit; }
+.kv dd { margin: 0; text-align: right; }
+.kv .total { border-top: 1px solid var(--border); padding-top: 10px; font-weight: 700; }
+.kv .total dd { color: var(--brand-olive); }
+
+.proof {
+  display: grid; gap: 2px; place-items: center; padding: 20px 12px; text-align: center; cursor: pointer;
+  background: var(--bg-cream); border: 2px dashed var(--brand-terracotta); border-radius: var(--radius-sm);
+}
+.proof__main { color: var(--brand-terracotta-dark); font-weight: 600; }
+.proof__sub { font-size: .875rem; color: var(--text-muted); }
+.proof:has(+ input:focus-visible) { outline: 3px solid var(--brand-terracotta); outline-offset: 2px; }
+
+.summary { margin-top: 16px; padding: 16px; display: grid; gap: 12px; }
+.summary h2 { font-size: 1.125rem; }
+#submitError { margin-top: 12px; }
+
+/* ---------- Confirmación ---------- */
+.done { display: grid; gap: 16px; justify-items: center; text-align: center; padding-top: 32px; }
+.done__check {
+  display: grid; place-items: center; width: 88px; height: 88px; border-radius: 50%;
+  background: var(--brand-olive); color: var(--text-on-dark); font-size: 2.5rem;
+}
+.done h2 { font-size: 2rem; }
+.done h2:focus { outline: none; }
+.done__detail { width: 100%; padding: 16px; text-align: left; }
+.done .btn { width: 100%; }
+
+/* ---------- Barra inferior ---------- */
+.bottom-bar { position: fixed; inset: auto 0 0 0; z-index: 10; background: var(--bg-cream); box-shadow: var(--shadow-bar); padding: 14px 0; }
+.bottom-bar[hidden] { display: none; }
+.bottom-bar__inner { max-width: 640px; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.bottom-bar__total { display: grid; }
+.bottom-bar__total span { font-size: .875rem; }
+.bottom-bar__total strong { font-size: 1.5rem; color: var(--brand-olive); line-height: 1.2; }
+.bottom-bar__inner .btn { min-width: 125px; }
+.bottom-bar[data-step="datos"] .bottom-bar__total,
+.bottom-bar[data-step="pago"] .bottom-bar__total { display: none; }
+.bottom-bar[data-step="datos"] .btn,
+.bottom-bar[data-step="pago"] .btn { width: 100%; }
+
+@media (min-width: 768px) {
+  .flow, .step-header .container { max-width: 640px; }
+  .step-header h1 { font-size: 2.25rem; }
+}
