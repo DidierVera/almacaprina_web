@@ -6,6 +6,12 @@
   <title>Alma Caprina · Productos de cabra de granja</title>
   <meta name="description" content="Quesos, leche y yogur de cabra hechos a mano. Haz tu pedido y te lo llevamos en el siguiente día de entrega.">
   <meta name="theme-color" content="#3E4A2F">
+  <link rel="icon" type="image/png" sizes="192x192" href="images/icon-192.png">
+  <link rel="apple-touch-icon" href="images/apple-touch-icon.png">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Alma Caprina · Productos de cabra de granja">
+  <meta property="og:description" content="Quesos, leche y yogur de cabra hechos a mano. Haz tu pedido en línea.">
+  <meta property="og:image" content="https://almacaprina.netlify.app/images/social-card.jpg">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,600;9..144,700&display=swap">
@@ -17,10 +23,10 @@
   <header class="hero">
     <div class="container hero__inner">
       <nav class="nav" aria-label="Principal">
-        <a class="brand" href="./">Alma Caprina</a>
+        <a class="brand brand--logo" href="./" aria-label="Alma Caprina, inicio"><img src="images/logo.png" alt="Alma Caprina · Del campo a tu mesa" width="76" height="60"></a>
         <a class="nav__link" href="order.html">Pedidos</a>
       </nav>
-      <div class="hero__media" role="img" aria-label="Cabras y quesos de Alma Caprina"></div>
+      <div class="hero__media" role="img" aria-label="Vista de la finca de Alma Caprina entre las montañas"></div>
       <div class="hero__copy">
         <h1>Lo natural de la cabra, directo a tu mesa</h1>
         <p>Quesos, leche y yogur de cabra hechos a mano. Pide hoy y te lo llevamos en el siguiente día de entrega.</p>
@@ -48,6 +54,17 @@
           <p class="muted">Cargando próximas entregas…</p>
         </div>
         <p class="muted when__note">El día de entrega es siempre posterior al día en que pides.</p>
+      </div>
+    </section>
+
+    <section class="section" aria-labelledby="farm-h">
+      <div class="container">
+        <h2 id="farm-h">Del campo a tu mesa</h2>
+        <p class="muted farm__text">Todo empieza con nuestras cabras: la leche con la que hacemos cada queso, yogur y arequipe.</p>
+        <div class="farm__photos">
+          <img src="images/goat-brown.jpg" alt="Una de nuestras cabras asomada entre las guaduas del corral" loading="lazy" width="900" height="1200">
+          <img src="images/goat-tan.jpg" alt="Otra de nuestras cabras, de pelaje canela" loading="lazy" width="900" height="1200">
+        </div>
       </div>
     </section>
 

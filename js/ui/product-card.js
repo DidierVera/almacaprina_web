@@ -63,6 +63,14 @@ export function productGroupCard(group) {
 
   const priceText = group.minPrice === group.maxPrice ? money(group.minPrice) : `Desde ${money(group.minPrice)}`;
 
+  const imgBox = imageBox(group.image);
+  /** Shows the photo of the flavor the customer is touching, when that flavor has one. */
+  const showFlavorImage = (variant) => {
+    const src = variant.image;
+    const img = imgBox.querySelector('img');
+    if (src && img && img.getAttribute('src') !== src) img.src = src;
+  };
+
   const variants = document.createElement('ul');
   variants.className = 'variants';
   variants.setAttribute('aria-label', `Sabores de ${group.name}`);
@@ -74,6 +82,7 @@ export function productGroupCard(group) {
       ? variant.variant_label
       : `${variant.variant_label} · ${money(variant.price)}`;
     item.append(textEl('span', 'variant-row__label', label), stepper(variant));
+    item.addEventListener('click', () => showFlavorImage(variant));
     variants.append(item);
   }
 
@@ -86,7 +95,7 @@ export function productGroupCard(group) {
     variants,
   );
 
-  li.append(imageBox(group.image), body);
+  li.append(imgBox, body);
   syncCard(li);
   return li;
 }
