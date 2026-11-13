@@ -5,6 +5,7 @@ import { h } from './ui.js';
 const VIEWS = [
   { id: 'orders', label: 'Pedidos', load: () => import('./views/orders.js') },
   { id: 'products', label: 'Productos', load: () => import('./views/products.js') },
+  { id: 'route', label: 'Ruta', load: () => import('./views/route.js') },
   { id: 'delivery', label: 'Entregas', load: () => import('./views/delivery.js') },
   { id: 'settings', label: 'Ajustes', load: () => import('./views/settings.js') },
 ];
