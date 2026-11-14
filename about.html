@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Nosotros · Alma Caprina</title>
+  <meta name="description" content="Conoce Alma Caprina: una finca de cabras en las montañas de Antioquia.">
+  <meta name="theme-color" content="#3E4A2F">
+  <link rel="icon" type="image/png" sizes="192x192" href="images/icon-192.png">
+  <link rel="apple-touch-icon" href="images/apple-touch-icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,600;9..144,700&display=swap">
+  <link rel="stylesheet" href="css/tokens.css">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/site.css">
+</head>
+<body>
+  <header class="page-head">
+    <div class="container">
+      <nav id="siteNav"></nav>
+      <h1>Nosotros</h1>
+    </div>
+  </header>
+
+  <main>
+    <section class="section" aria-labelledby="about-h">
+      <div class="container about">
+        <div class="about__copy">
+          <h2 id="about-h">Del campo a tu mesa</h2>
+          <p>Somos Alma Caprina, una finca de cabras en las montañas de Antioquia. Con la leche de nuestras cabras preparamos a mano quesos, yogur y otros lácteos, y te los llevamos hasta tu casa.</p>
+          <ul class="values">
+            <li class="card"><strong>Hecho a mano</strong><span class="muted">Cada producto se prepara en pequeñas cantidades.</span></li>
+            <li class="card"><strong>Sin conservantes</strong><span class="muted">Leche de cabra, cultivos y sal: lo justo.</span></li>
+            <li class="card"><strong>Del campo a tu mesa</strong><span class="muted">Pides en línea y te lo llevamos en el siguiente día de entrega.</span></li>
+          </ul>
+        </div>
+        <img class="about__img" src="images/farm.jpg" alt="Vista de la finca de Alma Caprina entre las montañas" width="1280" height="960">
+      </div>
+    </section>
+
+    <section class="section" aria-labelledby="gallery-h">
+      <div class="container">
+        <h2 id="gallery-h">Galería</h2>
+        <div class="gallery" id="gallery">
+          <button type="button" class="gallery__item" data-full="images/farm.jpg" data-alt="La finca de Alma Caprina entre las montañas" aria-label="Ampliar foto: la finca"><img src="images/farm.jpg" alt="" loading="lazy" width="120" height="120"></button>
+          <button type="button" class="gallery__item" data-full="images/goat-brown.jpg" data-alt="Una de nuestras cabras asomada entre las guaduas del corral" aria-label="Ampliar foto: cabra en el corral"><img src="images/goat-brown.jpg" alt="" loading="lazy" width="120" height="120"></button>
+          <button type="button" class="gallery__item" data-full="images/goat-tan.jpg" data-alt="Otra de nuestras cabras, de pelaje canela" aria-label="Ampliar foto: cabra de pelaje canela"><img src="images/goat-tan.jpg" alt="" loading="lazy" width="120" height="120"></button>
+          <button type="button" class="gallery__item" data-full="images/products/yogurt-mixed-berries.jpg" data-alt="Yogur bebible de frutos rojos" aria-label="Ampliar foto: yogur de frutos rojos"><img src="images/products/yogurt-mixed-berries.jpg" alt="" loading="lazy" width="120" height="120"></button>
+          <button type="button" class="gallery__item" data-full="images/products/cream-cheese.jpg" data-alt="Queso crema de cabra" aria-label="Ampliar foto: queso crema"><img src="images/products/cream-cheese.jpg" alt="" loading="lazy" width="120" height="120"></button>
+          <button type="button" class="gallery__item" data-full="images/products/rulo-cheese.jpg" data-alt="Queso rulo de cabra" aria-label="Ampliar foto: queso rulo"><img src="images/products/rulo-cheese.jpg" alt="" loading="lazy" width="120" height="120"></button>
+        </div>
+        <p class="gallery__more" id="galleryMore" hidden><a class="btn btn--secondary" id="galleryLink" target="_blank" rel="noopener">Más fotos en Instagram</a></p>
+      </div>
+    </section>
+  </main>
+
+  <footer id="siteFooter"></footer>
+
+  <script type="module" src="js/about.js"></script>
+</body>
+</html>
