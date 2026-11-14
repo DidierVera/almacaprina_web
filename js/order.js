@@ -243,6 +243,47 @@ $('locateBtn').addEventListener('click', () => {
 
 form.addEventListener('input', saveCustomer);
 
+/* Visible validation: a red outline and a message next to each missing or wrong field. */
+const FIELD_ERRORS = {
+  consent: 'Debes autorizar el tratamiento de tus datos para continuar.',
+  phone: 'Escribe un celular válido, por ejemplo 300 123 4567.',
+  email: 'Escribe un correo válido o déjalo vacío.',
+};
+const fieldError = (control) => FIELD_ERRORS[control.id.replace(/^f-/, '')] ?? 'Este campo es obligatorio.';
+
+function clearFieldError(control) {
+  const holder = control.closest('.field, .consent');
+  holder?.classList.remove('is-invalid');
+  holder?.querySelector('.field-error')?.remove();
+  control.removeAttribute('aria-invalid');
+}
+
+/** Returns true when the form is valid; otherwise marks every problem and focuses the first one. */
+function showFormErrors() {
+  const invalid = [...form.elements].filter((c) => c.willValidate && !c.validity.valid);
+  [...form.elements].forEach((c) => { if (c.willValidate && c.validity.valid) clearFieldError(c); });
+  for (const control of invalid) {
+    const holder = control.closest('.field, .consent');
+    clearFieldError(control);
+    holder.classList.add('is-invalid');
+    control.setAttribute('aria-invalid', 'true');
+    const message = document.createElement('p');
+    message.className = 'field-error';
+    message.id = `err-${control.id}`;
+    message.setAttribute('role', 'alert');
+    message.textContent = fieldError(control);
+    holder.append(message);
+    control.setAttribute('aria-describedby', message.id);
+  }
+  if (invalid.length) {
+    invalid[0].focus();
+    invalid[0].scrollIntoView({ block: 'center', behavior: 'smooth' });
+  }
+  return invalid.length === 0;
+}
+form.addEventListener('input', (e) => { if (e.target.validity?.valid) clearFieldError(e.target); });
+form.addEventListener('change', (e) => { if (e.target.validity?.valid) clearFieldError(e.target); });
+
 /* ---------------- step 3: payment ---------------- */
 function renderPayment() {
   const fee = shippingFee();
@@ -369,7 +410,7 @@ $('nextBtn').addEventListener('click', () => {
   if (state.step === 'products') { openConfirmDialog(); return; }
 
   if (state.step === 'details') {
-    if (!form.reportValidity()) return;
+    if (!showFormErrors()) return;
     if (!state.location) { setGeoStatus('Marca tu ubicación en el mapa para calcular el domicilio.', { error: true }); $('locateBtn').focus(); return; }
     if (!state.shipping) { setGeoStatus('Estamos calculando tu domicilio, un momento…'); return; }
     if (!state.shipping.covered) return;

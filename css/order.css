@@ -119,3 +119,9 @@ body { padding-bottom: 110px; }
 .clear-row { margin: 0 0 10px; min-height: 0; text-align: right; }
 .clear-row .link-btn { background: none; border: 0; padding: 4px 0; font: inherit; font-size: .875rem; font-weight: 600; color: var(--brand-terracotta-dark); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
 .clear-row .link-btn[hidden] { display: none; }
+
+/* Field errors (shown after pressing Continuar with something missing) */
+.field.is-invalid input, .field.is-invalid textarea { border-color: var(--danger); background: #FDF3F3; }
+.field-error { margin: 0; font-size: .875rem; font-weight: 600; color: var(--danger); }
+.consent.is-invalid { border: 2px solid var(--danger); border-radius: var(--radius-md); background: #FDF3F3; padding: 10px 12px; }
+.consent.is-invalid .remember__check input { outline: 2px solid var(--danger); outline-offset: 2px; }
