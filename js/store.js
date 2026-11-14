@@ -16,9 +16,12 @@ function memoize(load) {
 const PRODUCT_COLUMNS = 'id,name,detail,price,category,image_url,featured,sort,variant_group,variant_label';
 
 export const getProducts = memoize(async () => {
-  // `description` and `nutrition` are newer columns: if the database was not upgraded yet, the store still works without them.
+  // The text columns are newer: if the database was not upgraded yet, the store still works with fewer columns.
   const query = (columns) => select('products', `select=${columns}&active=eq.true&order=sort.asc`);
-  const rows = await query(`${PRODUCT_COLUMNS},description,nutrition`).catch(() => query(PRODUCT_COLUMNS));
+  const TEXT = 'description,nutrition,long_description,ideal_for,storage';
+  const rows = await query(`${PRODUCT_COLUMNS},${TEXT}`)
+    .catch(() => query(`${PRODUCT_COLUMNS},description,nutrition`))
+    .catch(() => query(PRODUCT_COLUMNS));
   return rows.map(({ image_url: image, ...p }) => ({ ...p, image }));
 });
 

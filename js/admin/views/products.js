@@ -95,6 +95,9 @@ export async function mount(container) {
     const nameInput = text('name', { required: true, maxLength: 120 });
     const detailInput = text('detail', { maxLength: 160, placeholder: '250 g · artesanal' });
     const descriptionInput = h('textarea', { name: 'description', rows: '3', maxLength: 500, placeholder: 'Cremoso y suave, ideal para untar…', value: draft.description ?? '' });
+    const longInput = h('textarea', { name: 'long_description', rows: '4', maxLength: 900, placeholder: '2 o 3 frases para la ficha del producto…', value: draft.long_description ?? '' });
+    const idealInput = h('textarea', { name: 'ideal_for', rows: '2', maxLength: 300, placeholder: 'Desayunos, arepas, ensaladas…', value: draft.ideal_for ?? '' });
+    const storageInput = h('textarea', { name: 'storage', rows: '2', maxLength: 300, placeholder: 'Refrigerado y bien tapado…', value: draft.storage ?? '' });
     const nutritionInput = h('textarea', { name: 'nutrition', rows: '5', maxLength: 800, placeholder: 'Porción: 100 g\nProteína: 3,4 g\nGrasa: 4 g', value: draft.nutrition ?? '' });
     const priceInput = text('price', { type: 'number', min: '0', step: '100', required: true });
     const sortInput = text('sort', { type: 'number', step: '1' });
@@ -144,6 +147,7 @@ export async function mount(container) {
           id: isNew ? uniqueId(nameInput.value) : product.id,
           name: nameInput.value.trim(), detail: detailInput.value.trim(), price,
           description: descriptionInput.value.trim() || null, nutrition: nutritionInput.value.trim() || null,
+          long_description: longInput.value.trim() || null, ideal_for: idealInput.value.trim() || null, storage: storageInput.value.trim() || null,
           category: categorySelect.value, image_url, active: activeValue, featured: featuredValue,
           sort: Number(sortInput.value) || 0,
           variant_group: variantGroup || null, variant_label: variantLabel || null,
@@ -168,7 +172,10 @@ export async function mount(container) {
       h('div', { class: 'drawer__img' }, preview, fileInput),
       field('Nombre', nameInput),
       field('Descripción corta', detailInput, '(presentación)'),
-      field('Descripción del producto', descriptionInput, '(opcional, se ve en "Nuestros productos")'),
+      field('Descripción corta', descriptionInput, '(opcional, bajo el nombre en "Nuestros productos")'),
+      field('Descripción completa', longInput, '(opcional, se ve en "Ver más")'),
+      field('Ideal para', idealInput, '(opcional)'),
+      field('Conservación', storageInput, '(opcional)'),
       field('Información nutricional', nutritionInput, '(opcional, una línea por dato: «Proteína: 3,4 g»)'),
       h('div', { class: 'form-grid' }, field('Categoría', categorySelect), field('Precio (COP)', priceInput)),
       field('Orden en la lista', sortInput, '(menor = primero)'),

@@ -141,3 +141,11 @@ html { scroll-behavior: smooth; }
 
 @media (min-width: 640px) { .info-grid { grid-template-columns: repeat(2, 1fr); } }
 @media (min-width: 1000px) { .info-grid { grid-template-columns: repeat(3, 1fr); } }
+
+/* "Ver más" on the product cards */
+.more { margin-top: 6px; font-size: .9375rem; }
+.more summary { cursor: pointer; font-weight: 600; color: var(--brand-olive); }
+.more__content { display: grid; gap: 8px; margin-top: 10px; }
+.more__row { margin: 0; line-height: 1.5; }
+.more__row--title { font-weight: 700; margin-top: 4px; }
+.more .nutrition__list { margin-top: 0; }

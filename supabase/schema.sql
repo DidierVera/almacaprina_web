@@ -49,12 +49,18 @@ create table if not exists public.products (
   variant_label text,                   -- e.g. 'Mora' (required whenever variant_group is set)
   description text,                     -- optional: a short paragraph shown on the Products page
   nutrition   text,                     -- optional: one "Nutrient: value" line per row, shown on the Products page
+  long_description text,                -- optional: 2-3 sentences for the "Ver más" part of the product card
+  ideal_for   text,                     -- optional: uses and pairings
+  storage     text,                     -- optional: how to keep it
   created_at timestamptz not null default now()
 );
 
 -- Idempotent upgrade for projects created before product descriptions existed.
 alter table public.products add column if not exists description text;
 alter table public.products add column if not exists nutrition text;
+alter table public.products add column if not exists long_description text;
+alter table public.products add column if not exists ideal_for text;
+alter table public.products add column if not exists storage text;
 
 -- Idempotent upgrade for projects created before product variants existed.
 alter table public.products add column if not exists variant_group text;
