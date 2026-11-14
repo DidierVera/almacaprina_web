@@ -56,11 +56,23 @@ Deno.serve(async (req) => {
     { text: 'WhatsApp', url: `https://wa.me/${order.customer_phone.replace(/\D/g, '').replace(/^(\d{10})$/, '57$1')}` },
   ];
 
+  // Transfer orders get "Confirmar pago" / "Rechazar" buttons, handled by the telegram-webhook function.
+  const payButtons = order.payment_method === 'transfer'
+    ? [{ text: '✅ Confirmar pago', callback_data: `pay:${order.id}` }, { text: '❌ Rechazar', callback_data: `reject:${order.id}` }]
+    : null;
+
   try {
-    await telegram('sendMessage', { text, parse_mode: 'HTML', reply_markup: { inline_keyboard: [buttons] } });
-    if (order.proof_path) {
-      const { data } = await db.storage.from('proofs').createSignedUrl(order.proof_path, 3600);
-      if (data?.signedUrl) await telegram('sendPhoto', { photo: data.signedUrl, caption: `Comprobante ${order.number}` });
+    let signedUrl: string | undefined;
+    if (order.proof_path) signedUrl = (await db.storage.from('proofs').createSignedUrl(order.proof_path, 3600)).data?.signedUrl;
+    // The pay buttons sit under the proof photo, so you look at the proof and decide right there.
+    // Without a photo they go under the message instead.
+    const keyboard = [buttons, ...(payButtons && !signedUrl ? [payButtons] : [])];
+    await telegram('sendMessage', { text, parse_mode: 'HTML', reply_markup: { inline_keyboard: keyboard } });
+    if (signedUrl) {
+      await telegram('sendPhoto', {
+        photo: signedUrl, caption: `Comprobante ${order.number}`,
+        ...(payButtons ? { reply_markup: { inline_keyboard: [payButtons] } } : {}),
+      });
     }
   } catch (err) {
     console.error(err);
