@@ -33,6 +33,7 @@ html { scroll-behavior: smooth; }
 .about__copy { display: grid; gap: 14px; align-content: start; }
 .about__copy h2 { margin-bottom: 0; }
 .about__img { width: 100%; height: 260px; object-fit: cover; border-radius: var(--radius-lg); }
+.about__quote { margin: 4px 0; padding-left: 14px; border-left: 3px solid var(--brand-terracotta); font-family: var(--font-display); font-size: 1.25rem; font-weight: 600; color: var(--brand-olive); }
 .values { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
 .values li { padding: 14px 16px; display: grid; gap: 2px; }
 

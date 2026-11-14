@@ -13,9 +13,10 @@ try {
   throw err;
 }
 
-const { whatsapp, instagram, email } = config.business;
+const { whatsapp, phone, instagram, email } = config.business;
 const cards = [];
 if (whatsapp) cards.push(['WhatsApp', 'Escríbenos para dudas o pedidos especiales', `https://wa.me/${whatsapp.replace(/\D/g, '')}`]);
+if (phone) cards.push(['Llámanos', phone, `tel:${phone.replace(/[^\d+]/g, '')}`]);
 if (instagram) cards.push(['Instagram', `@${instagram}`, `https://www.instagram.com/${instagram}/`]);
 if (email) cards.push(['Correo', email, `mailto:${email}`]);
 
@@ -23,7 +24,7 @@ list.replaceChildren(...cards.map(([title, sub, href]) => {
   const li = document.createElement('li');
   const a = document.createElement('a');
   a.href = href; a.rel = 'noopener';
-  if (!href.startsWith('mailto:')) a.target = '_blank';
+  if (!href.startsWith('mailto:') && !href.startsWith('tel:')) a.target = '_blank';
   const strong = document.createElement('strong'); strong.textContent = title;
   const span = document.createElement('span'); span.className = 'muted'; span.textContent = sub;
   a.append(strong, span); li.append(a);
