@@ -4,6 +4,7 @@ import { nextDeliveryDate } from './delivery.js';
 import { bogotaNow, dayName, formatKm, formatLong, formatShort, money } from './format.js';
 import { errorMessage } from './messages.js';
 import { loadLeaflet, OSM_TILES } from './leaflet-loader.js';
+import { findPlaces } from './geocode.js';
 import { POLICY_VERSION } from './legal.js';
 import { feeForKm, hubsOf, nearestHub, roadKm } from './shipping.js';
 import { createOrder, getConfig, getProducts } from './store.js';
@@ -243,6 +244,74 @@ $('locateBtn').addEventListener('click', () => {
 
 form.addEventListener('input', saveCustomer);
 
+/* Address search: finds the map point for the typed address, or offers nearby references. */
+let searchId = 0;
+const placesBox = $('places');
+
+function showPlaces(title, results, { skipFirst = false } = {}) {
+  const list = skipFirst ? results.slice(1) : results;
+  $('placesTitle').textContent = title;
+  $('placeList').replaceChildren(...list.map((r) => {
+    const li = document.createElement('li');
+    const button = document.createElement('button');
+    button.type = 'button'; button.className = 'places__item'; button.textContent = r.label || 'Punto en el mapa';
+    button.addEventListener('click', () => {
+      setLocation(r.lat, r.lng, { pan: true });
+      $('placeList').querySelectorAll('.places__item').forEach((b) => b.setAttribute('aria-pressed', String(b === button)));
+    });
+    li.append(button);
+    return li;
+  }));
+  placesBox.hidden = !title;
+}
+
+async function searchAddress() {
+  const address = $('f-address').value.trim();
+  const neighborhood = $('f-neighborhood').value.trim();
+  const city = $('f-city').value.trim();
+  if (!address || !city) {
+    setGeoStatus('Escribe tu dirección y tu municipio para buscarla en el mapa.', { error: true });
+    (address ? $('f-city') : $('f-address')).focus();
+    return;
+  }
+  const id = ++searchId;
+  const button = $('findBtn');
+  button.disabled = true; button.textContent = 'Buscando…';
+  placesBox.hidden = true;
+  setGeoStatus('Buscando tu dirección…');
+  try {
+    const { level, results } = await findPlaces({ address, neighborhood, city });
+    if (id !== searchId) return; // a newer search replaced this one
+    if (level === 'none') {
+      setGeoStatus('No encontramos esa dirección. Toca el mapa para marcarla o usa tu ubicación actual.', { error: true });
+    } else if (level === 'multiple') {
+      setGeoStatus('Esa calle existe en varios sectores. Elige el tuyo o toca el mapa.', { error: true });
+      showPlaces('Encontramos esa calle en varios sectores. Elige el tuyo y arrastra el pin hasta tu puerta:', results);
+    } else if (level === 'area') {
+      if (map) map.setView([results[0].lat, results[0].lng], 14);
+      setGeoStatus('No encontramos esa dirección exacta. Elige un punto de referencia cercano o toca el mapa.', { error: true });
+      showPlaces('Puntos cercanos como referencia. Elige uno y arrastra el pin hasta tu puerta:', results);
+    } else {
+      await setLocation(results[0].lat, results[0].lng, { pan: true });
+      const exact = level === 'address';
+      showPlaces(exact
+        ? 'Encontramos tu dirección. Revisa que el pin esté en tu puerta y arrástralo si hace falta.'
+        : 'Encontramos la calle, pero no el número exacto. Arrastra el pin hasta tu puerta.',
+      results, { skipFirst: true });
+      if (results.length > 1) $('placesTitle').textContent += ' ¿Es otro lugar? Elige aquí:';
+    }
+  } catch {
+    if (id === searchId) setGeoStatus('No pudimos buscar la dirección ahora. Toca el mapa para marcarla.', { error: true });
+  } finally {
+    if (id === searchId) { button.disabled = false; button.textContent = 'Buscar mi dirección en el mapa'; }
+  }
+}
+$('findBtn').addEventListener('click', searchAddress);
+// Once the customer has typed address, neighborhood and municipality and there is no pin yet, search on their behalf.
+$('f-city').addEventListener('change', () => {
+  if (!state.location && $('f-address').value.trim() && $('f-neighborhood').value.trim() && $('f-city').value.trim()) searchAddress();
+});
+
 /* Visible validation: a red outline and a message next to each missing or wrong field. */
 const FIELD_ERRORS = {
   consent: 'Debes autorizar el tratamiento de tus datos para continuar.',
@@ -358,7 +427,7 @@ async function submitOrder() {
       items: cart.entries().map(([id, qty]) => ({ id, qty })),
       customer: {
         name: f.name.trim(), phone: f.phone.trim(), email: f.email.trim(),
-        address: f.address.trim(), neighborhood: f.neighborhood.trim(), notes: f.notes.trim(),
+        address: f.address.trim(), neighborhood: f.neighborhood.trim(), city: f.city.trim(), notes: f.notes.trim(),
       },
       delivery: { km: state.shipping.km, lat: state.location.lat, lng: state.location.lng },
       payment: { method: state.payment, proof: state.proof },

@@ -55,8 +55,18 @@
           <input id="f-address" name="address" autocomplete="street-address" required maxlength="140">
         </div>
         <div class="field">
-          <label for="f-neighborhood">Barrio o municipio</label>
+          <label for="f-neighborhood">Barrio o sector</label>
           <input id="f-neighborhood" name="neighborhood" required maxlength="80">
+        </div>
+        <div class="field">
+          <label for="f-city">Municipio</label>
+          <input id="f-city" name="city" list="cityList" autocomplete="address-level2" required maxlength="80" placeholder="Medellín, Envigado, Rionegro…">
+          <datalist id="cityList">
+            <option value="Medellín"><option value="Envigado"><option value="Sabaneta"><option value="Itagüí"><option value="La Estrella">
+            <option value="Caldas"><option value="Bello"><option value="Copacabana"><option value="Girardota"><option value="Barbosa">
+            <option value="Rionegro"><option value="El Retiro"><option value="La Ceja"><option value="Marinilla"><option value="Guarne"><option value="El Carmen de Viboral">
+            <option value="Amagá"><option value="Angelópolis"><option value="Fredonia"><option value="Venecia"><option value="Titiribí"><option value="La Pintada"><option value="Santa Bárbara">
+          </datalist>
         </div>
         <div class="field">
           <label for="f-notes">Indicaciones <span class="hint">(opcional)</span></label>
@@ -80,8 +90,15 @@
 
       <section class="geo" aria-labelledby="geo-h">
         <h2 id="geo-h">Ubicación de entrega</h2>
-        <p class="muted">Toca el mapa o arrastra el pin hasta tu casa. Con eso calculamos el domicilio.</p>
-        <button type="button" class="btn btn--secondary" id="locateBtn">Usar mi ubicación</button>
+        <p class="muted">Escribe tu dirección arriba y búscala en el mapa. Luego arrastra el pin hasta tu puerta: con eso calculamos el domicilio. La ubicación es la del lugar donde recibirás el pedido, no la de donde estás ahora.</p>
+        <div class="geo__actions">
+          <button type="button" class="btn btn--primary" id="findBtn">Buscar mi dirección en el mapa</button>
+          <button type="button" class="btn btn--secondary" id="locateBtn">Usar mi ubicación actual</button>
+        </div>
+        <div class="places" id="places" hidden>
+          <p class="places__title" id="placesTitle"></p>
+          <ul class="places__list" id="placeList"></ul>
+        </div>
         <div id="map" class="map" role="application" aria-label="Mapa para marcar la ubicación de entrega"></div>
         <p class="notice" id="geoStatus" aria-live="polite">Aún no has marcado tu ubicación.</p>
       </section>

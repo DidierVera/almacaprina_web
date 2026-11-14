@@ -117,3 +117,27 @@ html { scroll-behavior: smooth; }
 .legal ul { margin: 8px 0; padding-left: 22px; display: grid; gap: 6px; }
 .legal__contact { list-style: none; padding-left: 0 !important; }
 .legal__contact:empty { display: none; }
+
+/* ---------- "Nuestros productos": informative layout ---------- */
+.values-strip { background: var(--surface-sand); }
+.values-strip__list { list-style: none; margin: 0 auto; padding: 14px var(--gutter); display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; text-align: center; }
+.values-strip__list strong { display: block; font-size: .9375rem; color: var(--brand-olive); }
+.values-strip__list span { font-size: .8125rem; color: var(--text-muted); }
+
+.category-nav { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 8px; }
+.category-nav .chip { text-decoration: none; padding: 8px 16px; border-radius: 999px; background: var(--surface-white); font-weight: 600; font-size: .9375rem; color: var(--brand-olive); border: 1px solid var(--border); }
+.category-nav .chip:hover, .category-nav .chip:focus-visible { border-color: var(--brand-olive); }
+.catalog__group { scroll-margin-top: 16px; }
+
+.info-grid { list-style: none; margin: 0; padding: 0; display: grid; gap: 16px; grid-template-columns: 1fr; }
+.info-card { background: var(--surface-white); border-radius: var(--radius-lg); overflow: hidden; display: flex; flex-direction: column; }
+.info-card__img { aspect-ratio: 4 / 3; background: var(--surface-sand); }
+.info-card__img img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.info-card__body { padding: 16px 18px 18px; display: grid; gap: 8px; align-content: start; }
+.info-card__name { font-size: 1.25rem; font-weight: 600; margin: 0; }
+.info-card__pill { margin: 0; justify-self: start; background: var(--surface-sand); color: var(--brand-olive); font-size: .8125rem; font-weight: 600; padding: 3px 10px; border-radius: 999px; }
+.info-card__text { margin: 0; line-height: 1.5; }
+.info-card__label { margin: 4px 0 0; font-size: .8125rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--text-muted); }
+
+@media (min-width: 640px) { .info-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (min-width: 1000px) { .info-grid { grid-template-columns: repeat(3, 1fr); } }

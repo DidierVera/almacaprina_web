@@ -38,7 +38,7 @@ Deno.serve(async (req) => {
   const text = [
     `🛒 <b>Nuevo pedido ${esc(order.number)}</b>`,
     `${esc(order.customer_name)} · ${esc(order.customer_phone)}`,
-    `${esc(order.address)}, ${esc(order.neighborhood)}`,
+    `${esc(order.address)}, ${esc(order.neighborhood)}${order.city ? `, ${esc(order.city)}` : ''}`,
     order.notes ? `📝 ${esc(order.notes)}` : '',
     '',
     lines,

@@ -125,3 +125,14 @@ body { padding-bottom: 110px; }
 .field-error { margin: 0; font-size: .875rem; font-weight: 600; color: var(--danger); }
 .consent.is-invalid { border: 2px solid var(--danger); border-radius: var(--radius-md); background: #FDF3F3; padding: 10px 12px; }
 .consent.is-invalid .remember__check input { outline: 2px solid var(--danger); outline-offset: 2px; }
+
+/* Address search and nearby references */
+.geo__actions { display: grid; gap: 8px; margin-bottom: 12px; }
+@media (min-width: 520px) { .geo__actions { grid-template-columns: 1fr 1fr; } }
+.places { margin: 12px 0; padding: 12px 14px; background: var(--surface-white); border-radius: var(--radius-md); }
+.places[hidden] { display: none; }
+.places__title { margin: 0 0 8px; font-weight: 600; font-size: .9375rem; }
+.places__list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.places__item { width: 100%; text-align: left; padding: 10px 12px; border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--bg-cream); font: inherit; font-size: .9375rem; cursor: pointer; }
+.places__item:hover, .places__item:focus-visible { border-color: var(--brand-olive); }
+.places__item[aria-pressed="true"] { border-color: var(--brand-olive); background: #EDF1E3; font-weight: 600; }

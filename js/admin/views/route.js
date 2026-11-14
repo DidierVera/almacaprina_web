@@ -104,7 +104,7 @@ export async function mount(container) {
         h('div', { class: 'stop__body' },
           h('div', { class: 'stop__head' }, h('strong', {}, o.customer_name), o.number && h('span', { class: 'muted' }, `#${o.number}`),
             done ? badge('success', 'Entregado') : owes ? badge('warning', `Cobrar ${money(o.total)}`) : null),
-          h('span', {}, `${o.address}, ${o.neighborhood}`),
+          h('span', {}, `${o.address}, ${o.neighborhood}${o.city ? `, ${o.city}` : ''}`),
           o.hub && h('span', { class: 'muted' }, `Zona: ${o.hub}`),
           o.notes && h('span', { class: 'muted' }, o.notes),
           h('span', { class: 'muted' }, items),

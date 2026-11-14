@@ -152,6 +152,7 @@ create table if not exists public.orders (
   customer_email text,
   address        text not null,
   neighborhood   text not null,
+  city           text,                                       -- municipality, used to find the address on the map
   notes          text,
   lat            double precision not null,
   lng            double precision not null,
@@ -174,6 +175,7 @@ create table if not exists public.orders (
 
   unique (seq), unique (token)
 );
+alter table public.orders add column if not exists city text;  -- for databases created before the municipality field existed
 alter table public.orders add column if not exists hub text;   -- for databases created before hubs existed
 alter table public.orders add column if not exists consent_at timestamptz;
 alter table public.orders add column if not exists consent_version text;
@@ -264,6 +266,7 @@ declare
   v_email text := left(btrim(coalesce(c->>'email', '')), 120);
   v_addr  text := left(btrim(coalesce(c->>'address', '')), 140);
   v_hood  text := left(btrim(coalesce(c->>'neighborhood', '')), 80);
+  v_city  text := left(btrim(coalesce(c->>'city', '')), 80);
   v_notes text := left(btrim(coalesce(c->>'notes', '')), 300);
 
   v_method text := pay->>'method';
@@ -376,9 +379,9 @@ begin
     raise exception 'TOO_MANY_ORDERS';
   end if;
 
-  insert into public.orders (customer_name, customer_phone, customer_email, address, neighborhood, notes,
+  insert into public.orders (customer_name, customer_phone, customer_email, address, neighborhood, city, notes,
                              lat, lng, km, hub, consent_at, consent_version, delivery_date, shipping_fee, payment_method, payment_status, proof_path)
-  values (v_name, v_phone, nullif(v_email, ''), v_addr, v_hood, nullif(v_notes, ''),
+  values (v_name, v_phone, nullif(v_email, ''), v_addr, v_hood, nullif(v_city, ''), nullif(v_notes, ''),
           v_lat, v_lng, v_km, nullif(v_hub_label, ''), now(), left(coalesce(payload->'consent'->>'version', ''), 20), v_date, v_fee, v_method,
           case when v_method = 'transfer' then 'under_review' else 'pending' end, v_proof)
   returning * into v_order;

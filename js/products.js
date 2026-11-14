@@ -27,13 +27,21 @@ for (const category of CATEGORIES.filter((c) => c.id !== 'all')) {
   if (!inCategory.length) continue;
   const section = document.createElement('section');
   section.className = 'catalog__group';
+  section.id = `cat-${category.id}`;
   const heading = document.createElement('h2');
   heading.textContent = category.label;
   const list = document.createElement('ul');
-  list.className = 'product-list product-list--grid';
+  list.className = 'info-grid';
   list.replaceChildren(...inCategory.map((i) => (i.type === 'group' ? infoGroupCard(i) : infoCard(i.product))));
   section.append(heading, list);
   sections.push(section);
 }
 catalog.replaceChildren(...sections);
+
+// Category jump links (only for categories that have products)
+document.getElementById('categoryNav').replaceChildren(...sections.map((section) => {
+  const link = document.createElement('a');
+  link.className = 'chip'; link.href = `#${section.id}`; link.textContent = section.querySelector('h2').textContent;
+  return link;
+}));
 if (!sections.length) catalog.textContent = 'Pronto publicaremos nuestros productos.';

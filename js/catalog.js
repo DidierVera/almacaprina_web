@@ -7,6 +7,13 @@
  *   in the position of the first member of each group. A group with a single active variant
  *   is shown as a normal product.
  */
+/** Sizes like "5 libras" … "8 libras" read best in numeric order; flavors keep the order set in the panel. */
+function sortVariants(group) {
+  if (group.every((v) => /^[0-9]/.test(v.variant_label ?? ''))) {
+    group.sort((a, b) => parseFloat(a.variant_label.replace(',', '.')) - parseFloat(b.variant_label.replace(',', '.')));
+  }
+}
+
 export function groupProducts(products) {
   const members = new Map(); // group name -> products
   for (const p of products) {
@@ -20,6 +27,7 @@ export function groupProducts(products) {
     if (!group || group.length < 2) { items.push({ type: 'single', product: p }); continue; }
     if (emitted.has(p.variant_group)) continue;
     emitted.add(p.variant_group);
+    sortVariants(group);
     const prices = group.map((v) => v.price);
     items.push({
       type: 'group',

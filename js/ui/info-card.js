@@ -1,5 +1,5 @@
-// Read-only product cards for the "Nuestros productos" page: photo, description and nutrition facts, no cart controls.
-import { money } from '../format.js';
+// Read-only product cards for the "Nuestros productos" page: photo, presentation, description,
+// flavors/sizes and nutrition facts. No prices and no cart controls: ordering happens in the order flow.
 
 const el = (tag, className, text) => {
   const node = document.createElement(tag);
@@ -8,11 +8,11 @@ const el = (tag, className, text) => {
   return node;
 };
 
-function photo(src) {
-  const box = el('div', 'product-card__img');
+function photo(src, alt) {
+  const box = el('div', 'info-card__img');
   if (src) {
     const img = document.createElement('img');
-    img.src = src; img.alt = ''; img.loading = 'lazy';
+    img.src = src; img.alt = alt; img.loading = 'lazy';
     box.append(img);
   }
   return box;
@@ -27,45 +27,41 @@ function nutritionBlock(text) {
   const list = el('dl', 'nutrition__list');
   for (const line of lines) {
     const i = line.indexOf(':');
-    if (i > 0) {
-      list.append(el('dt', '', line.slice(0, i).trim()), el('dd', '', line.slice(i + 1).trim()));
-    } else {
-      const note = el('dd', 'nutrition__note', line);
-      list.append(note);
-    }
+    if (i > 0) list.append(el('dt', '', line.slice(0, i).trim()), el('dd', '', line.slice(i + 1).trim()));
+    else list.append(el('dd', 'nutrition__note', line));
   }
   details.append(list);
   return details;
 }
 
-function card({ image, name, detail, description, price, nutrition, flavors }) {
-  const li = el('li', 'product-card product-card--info');
-  const body = el('div', 'product-card__body');
-  body.append(el('h3', 'product-card__name', name));
-  if (detail) body.append(el('p', 'product-card__detail', detail));
-  if (description) body.append(el('p', 'product-card__description', description));
-  if (flavors?.length) {
+function card({ image, name, detail, description, nutrition, options, optionsLabel }) {
+  const li = el('li', 'info-card');
+  const body = el('div', 'info-card__body');
+  body.append(el('h3', 'info-card__name', name));
+  if (detail) body.append(el('p', 'info-card__pill', detail));
+  if (description) body.append(el('p', 'info-card__text', description));
+  if (options?.length) {
+    body.append(el('p', 'info-card__label', optionsLabel));
     const chips = el('ul', 'flavors');
-    chips.setAttribute('aria-label', `Sabores de ${name}`);
-    chips.append(...flavors.map((f) => el('li', '', f)));
+    chips.setAttribute('aria-label', `${optionsLabel} de ${name}`);
+    chips.append(...options.map((f) => el('li', '', f)));
     body.append(chips);
   }
-  body.append(el('span', 'price', price));
   const facts = nutritionBlock(nutrition);
   if (facts) body.append(facts);
-  li.append(photo(image), body);
+  li.append(photo(image, name), body);
   return li;
 }
 
-export const infoCard = (p) => card({ ...p, price: money(p.price) });
+export const infoCard = (p) => card(p);
 
-/** A group of flavors shares one card; description and nutrition come from the first member that has them. */
+/** A group (flavors, sizes, egg grades) shares one card; description and nutrition come from the first member that has them. */
 export function infoGroupCard(group) {
   const first = group.variants.find((v) => v.description || v.nutrition) ?? group.variants[0];
-  const price = group.minPrice === group.maxPrice ? money(group.minPrice) : `Desde ${money(group.minPrice)}`;
   return card({
-    image: group.image, name: group.name, detail: group.detail, price,
+    image: group.image, name: group.name, detail: group.detail,
     description: first.description, nutrition: first.nutrition,
-    flavors: group.variants.map((v) => v.variant_label),
+    options: group.variants.map((v) => v.variant_label),
+    optionsLabel: 'Disponible en',
   });
 }

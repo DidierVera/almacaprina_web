@@ -48,7 +48,7 @@ export async function mount(container) {
   function visibleOrders() {
     const q = state.query;
     return dayOrders()
-      .filter((o) => !q || [o.number, o.customer_name, o.customer_phone, o.neighborhood].some((v) => String(v).toLowerCase().includes(q)))
+      .filter((o) => !q || [o.number, o.customer_name, o.customer_phone, o.neighborhood, o.city ?? ''].some((v) => String(v).toLowerCase().includes(q)))
       .sort((a, b) => (a.route_position ?? 1e9) - (b.route_position ?? 1e9) || a.created_at.localeCompare(b.created_at));
   }
 
@@ -134,7 +134,7 @@ export async function mount(container) {
         h('strong', {}, o.customer_name),
         h('a', { href: `tel:${o.customer_phone.replace(/\s/g, '')}` }, o.customer_phone),
         o.customer_email && h('a', { href: `mailto:${o.customer_email}` }, o.customer_email),
-        h('span', {}, `${o.address}, ${o.neighborhood}`),
+        h('span', {}, `${o.address}, ${o.neighborhood}${o.city ? `, ${o.city}` : ''}`),
         o.notes && h('span', { class: 'muted' }, o.notes)),
 
       section('Entrega',
