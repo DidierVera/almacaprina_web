@@ -108,3 +108,12 @@ html { scroll-behavior: smooth; }
 .nutrition__list dt { color: var(--text-muted); }
 .nutrition__list dd { margin: 0; text-align: right; font-weight: 500; }
 .nutrition__list .nutrition__note { grid-column: 1 / -1; text-align: left; font-weight: 400; color: var(--text-muted); }
+
+/* ---------- Legal text ---------- */
+.legal { max-width: 760px; display: grid; gap: 8px; }
+.legal section { margin-bottom: 20px; }
+.legal h2 { font-size: 1.25rem; margin-bottom: 8px; }
+.legal p, .legal li { line-height: 1.6; }
+.legal ul { margin: 8px 0; padding-left: 22px; display: grid; gap: 6px; }
+.legal__contact { list-style: none; padding-left: 0 !important; }
+.legal__contact:empty { display: none; }

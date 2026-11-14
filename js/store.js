@@ -66,6 +66,7 @@ export async function createOrder(input) {
       items: input.items,
       delivery: input.delivery,
       payment: { method, proofPath },
+      consent: input.consent, // { accepted, version }: the customer's authorization to process personal data
     },
   });
 

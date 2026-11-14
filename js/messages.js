@@ -11,6 +11,7 @@ const ERROR_MESSAGES = {
   PRODUCT_UNAVAILABLE: 'Un producto de tu pedido ya no está disponible.',
   PAYMENT_UNAVAILABLE: 'Ese método de pago no está disponible.',
   PROOF_REQUIRED: 'Adjunta el comprobante de la transferencia.',
+  CONSENT_REQUIRED: 'Debes autorizar el tratamiento de tus datos para hacer el pedido.',
   LOCATION_REQUIRED: 'Marca tu ubicación en el mapa.',
   OUT_OF_COVERAGE: 'Tu dirección queda fuera de la zona de entrega.',
   NO_DELIVERY_DATE: 'No hay fechas de entrega disponibles por ahora.',

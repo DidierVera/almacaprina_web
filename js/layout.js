@@ -43,6 +43,7 @@ export async function renderFooter() {
   const social = el('p', { class: 'footer__links' });
   if (business.whatsapp) social.append(el('a', { href: `https://wa.me/${business.whatsapp.replace(/\D/g, '')}`, target: '_blank', rel: 'noopener' }, 'WhatsApp'));
   if (business.instagram) social.append(el('a', { href: `https://www.instagram.com/${business.instagram}/`, target: '_blank', rel: 'noopener' }, 'Instagram'));
+  social.append(el('a', { href: 'privacy.html' }, 'Política de datos'));
   footer.replaceChildren(el('div', { class: 'container footer__inner' },
     el('div', {}, el('p', { class: 'brand' }, 'Alma Caprina'), el('p', { class: 'footer__tag' }, 'Lácteos de cabra artesanales, hechos con amor en Montebello, Antioquia.')),
     el('a', { class: 'btn btn--primary', href: 'order.html' }, 'Haz tu pedido'),

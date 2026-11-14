@@ -157,6 +157,8 @@ create table if not exists public.orders (
   lng            double precision not null,
   km             numeric(6,1) not null,
   hub            text,                                       -- starting point the fee was measured from
+  consent_at     timestamptz,                                -- when the customer authorized the processing of personal data
+  consent_version text,                                      -- which version of the policy they accepted
 
   delivery_date  date not null,
   route_position integer,                                    -- stop order within that day's route
@@ -173,6 +175,8 @@ create table if not exists public.orders (
   unique (seq), unique (token)
 );
 alter table public.orders add column if not exists hub text;   -- for databases created before hubs existed
+alter table public.orders add column if not exists consent_at timestamptz;
+alter table public.orders add column if not exists consent_version text;
 create index if not exists orders_delivery_idx on public.orders (delivery_date, route_position);
 create index if not exists orders_phone_idx on public.orders (customer_phone, created_at);
 
@@ -293,6 +297,9 @@ begin
   end if;
   if v_addr = '' or v_hood = '' then raise exception 'INVALID_ADDRESS'; end if;
 
+  -- Authorization to process personal data (Ley 1581 de 2012): required, and recorded with the policy version.
+  if coalesce((payload->'consent'->>'accepted')::boolean, false) is not true then raise exception 'CONSENT_REQUIRED'; end if;
+
   -- Items
   if coalesce(jsonb_typeof(payload->'items'), '') <> 'array'
      or jsonb_array_length(payload->'items') not between 1 and 30 then
@@ -370,9 +377,9 @@ begin
   end if;
 
   insert into public.orders (customer_name, customer_phone, customer_email, address, neighborhood, notes,
-                             lat, lng, km, hub, delivery_date, shipping_fee, payment_method, payment_status, proof_path)
+                             lat, lng, km, hub, consent_at, consent_version, delivery_date, shipping_fee, payment_method, payment_status, proof_path)
   values (v_name, v_phone, nullif(v_email, ''), v_addr, v_hood, nullif(v_notes, ''),
-          v_lat, v_lng, v_km, nullif(v_hub_label, ''), v_date, v_fee, v_method,
+          v_lat, v_lng, v_km, nullif(v_hub_label, ''), now(), left(coalesce(payload->'consent'->>'version', ''), 20), v_date, v_fee, v_method,
           case when v_method = 'transfer' then 'under_review' else 'pending' end, v_proof)
   returning * into v_order;
 

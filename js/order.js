@@ -4,6 +4,7 @@ import { nextDeliveryDate } from './delivery.js';
 import { bogotaNow, dayName, formatKm, formatLong, formatShort, money } from './format.js';
 import { errorMessage } from './messages.js';
 import { loadLeaflet, OSM_TILES } from './leaflet-loader.js';
+import { POLICY_VERSION } from './legal.js';
 import { feeForKm, hubsOf, nearestHub, roadKm } from './shipping.js';
 import { createOrder, getConfig, getProducts } from './store.js';
 import { groupProducts } from './catalog.js';
@@ -316,6 +317,7 @@ async function submitOrder() {
       },
       delivery: { km: state.shipping.km, lat: state.location.lat, lng: state.location.lng },
       payment: { method: state.payment, proof: state.proof },
+      consent: { accepted: $('consent').checked, version: POLICY_VERSION },
     });
     cart.clear();
     go('confirmation');

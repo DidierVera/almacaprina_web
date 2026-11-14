@@ -45,6 +45,9 @@ export async function mount(container) {
     const whatsapp = h('input', { id: 's-wa', value: config.business.whatsapp ?? '', inputMode: 'tel', placeholder: '573001234567' });
     const instagram = h('input', { id: 's-ig', value: config.business.instagram ?? '', placeholder: 'almacaprina.co' });
     const phone = h('input', { id: 's-phone', type: 'tel', value: config.business.phone ?? '', placeholder: '312 825 6069' });
+    const legalName = h('input', { id: 's-legal', value: config.business.legalName ?? '', placeholder: 'Nombre completo o razón social', maxLength: 120 });
+    const taxId = h('input', { id: 's-tax', value: config.business.taxId ?? '', placeholder: 'NIT o cédula', maxLength: 30 });
+    const address = h('input', { id: 's-addr', value: config.business.address ?? '', placeholder: 'Montebello, Antioquia (vereda Caunzal)', maxLength: 160 });
     const email = h('input', { id: 's-email', type: 'email', value: config.business.email ?? '', placeholder: 'correo@ejemplo.com' });
     const save = h('button', { class: 'btn btn--primary btn--sm', type: 'submit' }, 'Guardar contacto');
     container.append(h('form', { class: 'panel', onSubmit: async (e) => {
@@ -53,14 +56,22 @@ export async function mount(container) {
       if (digits.length === 10) digits = `57${digits}`;
       if (digits && (digits.length < 11 || digits.length > 15)) { toast('El WhatsApp debe tener el código de país, por ejemplo 573001234567.', { error: true }); return; }
       const ig = instagram.value.trim().replace(/^@/, '');
-      if (await saveSection(save, 'business', () => ({ ...config.business, whatsapp: digits, instagram: ig, email: email.value.trim(), phone: phone.value.trim() }), 'Contacto guardado.')) {
-        config.business = { ...config.business, whatsapp: digits, instagram: ig, email: email.value.trim(), phone: phone.value.trim() }; whatsapp.value = digits;
+      const next = {
+        ...config.business, whatsapp: digits, instagram: ig, email: email.value.trim(), phone: phone.value.trim(),
+        legalName: legalName.value.trim(), taxId: taxId.value.trim(), address: address.value.trim(),
+      };
+      if (await saveSection(save, 'business', () => next, 'Contacto guardado.')) {
+        config.business = next; whatsapp.value = digits;
       }
     } },
     h('h2', {}, 'Contacto'),
     h('p', { class: 'hint' }, 'Aparece en la landing y en el botón de WhatsApp de la confirmación.'),
     h('div', { class: 'form-grid' }, field('s-wa', 'WhatsApp', whatsapp, '(con código de país)'), field('s-ig', 'Instagram', instagram, '(sin @)')),
     h('div', { class: 'form-grid' }, field('s-phone', 'Teléfono para llamadas', phone, '(opcional)'), field('s-email', 'Correo de contacto', email, '(opcional)')),
+    h('h3', { style: 'font-family:var(--font-body);font-size:1rem;margin-top:8px' }, 'Datos del responsable'),
+    h('p', { class: 'hint' }, 'Aparecen en la política de tratamiento de datos, para que los clientes sepan quién es el responsable y cómo ejercer sus derechos.'),
+    h('div', { class: 'form-grid' }, field('s-legal', 'Nombre o razón social', legalName), field('s-tax', 'NIT o cédula', taxId)),
+    h('div', { class: 'form-grid' }, field('s-addr', 'Dirección', address)),
     h('div', { class: 'panel__actions' }, save)));
   }
 
