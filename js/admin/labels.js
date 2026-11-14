@@ -44,7 +44,7 @@ export const CATEGORY_OPTIONS = [
   { id: 'cheese', label: 'Quesos' },
   { id: 'dairy', label: 'Lácteos' },
   { id: 'care', label: 'Cuidado' },
-  { id: 'other', label: 'Otros' },
+  { id: 'other', label: 'De la finca' },
 ];
 
 export const WEEKDAYS = [ // display order Monday → Sunday; `day` is JS getDay() (0 = Sunday)

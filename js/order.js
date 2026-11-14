@@ -346,8 +346,20 @@ function renderConfirmation() {
 }
 
 /* ---------------- primary button ---------------- */
+/** Asks the customer to confirm the selection (with the products total, no shipping) before the details step. */
+function openConfirmDialog() {
+  $('confirmLines').replaceChildren(...cartLines().map((l) => keyValueRow(`${l.qty} × ${l.product.name}`, money(l.product.price * l.qty))));
+  $('confirmTotal').textContent = money(subtotal());
+  const dialog = $('confirmDialog');
+  dialog.showModal();
+  $('confirmOk').focus();
+}
+$('confirmBack').addEventListener('click', () => $('confirmDialog').close());
+$('confirmOk').addEventListener('click', () => { $('confirmDialog').close(); go('details'); });
+$('confirmDialog').addEventListener('click', (e) => { if (e.target === e.currentTarget) e.currentTarget.close(); }); // click on the backdrop
+
 $('nextBtn').addEventListener('click', () => {
-  if (state.step === 'products') { go('details'); return; }
+  if (state.step === 'products') { openConfirmDialog(); return; }
 
   if (state.step === 'details') {
     if (!form.reportValidity()) return;

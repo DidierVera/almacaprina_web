@@ -1,10 +1,10 @@
-// Products page: the full catalog grouped by category (flavor variants share one card).
+// "Nuestros productos": read-only catalog (photo, description, nutrition facts) grouped by category.
+// Ordering happens in the order flow; this page only has one button that leads there.
 import { groupProducts } from './catalog.js';
-import { initCartBar } from './cart-bar.js';
 import { CATEGORIES } from './data/defaults.js';
 import { initLayout } from './layout.js';
 import { getProducts } from './store.js';
-import { bindSteppers, productCard, productGroupCard } from './ui/product-card.js';
+import { infoCard, infoGroupCard } from './ui/info-card.js';
 
 initLayout('products');
 const catalog = document.getElementById('catalog');
@@ -18,9 +18,12 @@ try {
 }
 
 const items = groupProducts(products);
+const categoryOf = (item) => (item.type === 'group' ? item.category : item.product.category);
+const known = new Set(CATEGORIES.map((c) => c.id));
 const sections = [];
 for (const category of CATEGORIES.filter((c) => c.id !== 'all')) {
-  const inCategory = items.filter((i) => (i.type === 'group' ? i.category : i.product.category) === category.id);
+  // A product with an unexpected category still shows up, under "De la finca".
+  const inCategory = items.filter((i) => categoryOf(i) === category.id || (category.id === 'other' && !known.has(categoryOf(i))));
   if (!inCategory.length) continue;
   const section = document.createElement('section');
   section.className = 'catalog__group';
@@ -28,12 +31,9 @@ for (const category of CATEGORIES.filter((c) => c.id !== 'all')) {
   heading.textContent = category.label;
   const list = document.createElement('ul');
   list.className = 'product-list product-list--grid';
-  list.replaceChildren(...inCategory.map((i) => (i.type === 'group' ? productGroupCard(i) : productCard(i.product))));
-  bindSteppers(list);
+  list.replaceChildren(...inCategory.map((i) => (i.type === 'group' ? infoGroupCard(i) : infoCard(i.product))));
   section.append(heading, list);
   sections.push(section);
 }
 catalog.replaceChildren(...sections);
 if (!sections.length) catalog.textContent = 'Pronto publicaremos nuestros productos.';
-
-initCartBar(products);

@@ -94,6 +94,8 @@ export async function mount(container) {
 
     const nameInput = text('name', { required: true, maxLength: 120 });
     const detailInput = text('detail', { maxLength: 160, placeholder: '250 g · artesanal' });
+    const descriptionInput = h('textarea', { name: 'description', rows: '3', maxLength: 500, placeholder: 'Cremoso y suave, ideal para untar…', value: draft.description ?? '' });
+    const nutritionInput = h('textarea', { name: 'nutrition', rows: '5', maxLength: 800, placeholder: 'Porción: 100 g\nProteína: 3,4 g\nGrasa: 4 g', value: draft.nutrition ?? '' });
     const priceInput = text('price', { type: 'number', min: '0', step: '100', required: true });
     const sortInput = text('sort', { type: 'number', step: '1' });
     const groupInput = h('input', { name: 'variant_group', value: draft.variant_group ?? '', list: 'variant-groups', maxLength: 80, placeholder: 'Yogur bebible' });
@@ -141,6 +143,7 @@ export async function mount(container) {
         return saveProduct({
           id: isNew ? uniqueId(nameInput.value) : product.id,
           name: nameInput.value.trim(), detail: detailInput.value.trim(), price,
+          description: descriptionInput.value.trim() || null, nutrition: nutritionInput.value.trim() || null,
           category: categorySelect.value, image_url, active: activeValue, featured: featuredValue,
           sort: Number(sortInput.value) || 0,
           variant_group: variantGroup || null, variant_label: variantLabel || null,
@@ -165,6 +168,8 @@ export async function mount(container) {
       h('div', { class: 'drawer__img' }, preview, fileInput),
       field('Nombre', nameInput),
       field('Descripción corta', detailInput, '(presentación)'),
+      field('Descripción del producto', descriptionInput, '(opcional, se ve en "Nuestros productos")'),
+      field('Información nutricional', nutritionInput, '(opcional, una línea por dato: «Proteína: 3,4 g»)'),
       h('div', { class: 'form-grid' }, field('Categoría', categorySelect), field('Precio (COP)', priceInput)),
       field('Orden en la lista', sortInput, '(menor = primero)'),
       h('fieldset', { class: 'variant-fieldset' },

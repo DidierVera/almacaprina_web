@@ -145,6 +145,20 @@
     </div>
   </div>
 
+  <!-- Confirmation of the selected products, shown when pressing "Continuar" on step 1 -->
+  <dialog class="modal" id="confirmDialog" aria-labelledby="confirmTitle">
+    <form method="dialog" class="modal__inner">
+      <h2 id="confirmTitle">Confirma tu selección</h2>
+      <dl class="kv modal__lines" id="confirmLines"></dl>
+      <div class="modal__total"><span>Total de productos</span><strong id="confirmTotal"></strong></div>
+      <p class="muted modal__note">No incluye el domicilio; lo calculamos en el siguiente paso según tu ubicación.</p>
+      <div class="modal__actions">
+        <button type="button" class="btn btn--secondary" id="confirmBack">Seguir eligiendo</button>
+        <button type="button" class="btn btn--primary" id="confirmOk">Confirmar y continuar</button>
+      </div>
+    </form>
+  </dialog>
+
   <script type="module" src="js/order.js"></script>
 </body>
 </html>

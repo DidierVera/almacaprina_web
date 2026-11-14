@@ -6,6 +6,7 @@ export const CATEGORIES = [
   { id: 'cheese', label: 'Quesos' },
   { id: 'dairy', label: 'Lácteos' },
   { id: 'care', label: 'Cuidado' },
+  { id: 'other', label: 'De la finca' },
 ];
 
 export const DEFAULT_CONFIG = {

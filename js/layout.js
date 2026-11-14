@@ -2,7 +2,7 @@
 import { getConfig } from './store.js';
 
 const LINKS = [
-  { id: 'products', href: 'products.html', label: 'Productos' },
+  { id: 'products', href: 'products.html', label: 'Nuestros productos' },
   { id: 'about', href: 'about.html', label: 'Nosotros' },
   { id: 'contact', href: 'contact.html', label: 'Contacto' },
 ];

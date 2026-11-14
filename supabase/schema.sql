@@ -47,8 +47,14 @@ create table if not exists public.products (
   sort       integer not null default 0,
   variant_group text,                   -- optional: products sharing a group show as ONE card with a variant selector
   variant_label text,                   -- e.g. 'Mora' (required whenever variant_group is set)
+  description text,                     -- optional: a short paragraph shown on the Products page
+  nutrition   text,                     -- optional: one "Nutrient: value" line per row, shown on the Products page
   created_at timestamptz not null default now()
 );
+
+-- Idempotent upgrade for projects created before product descriptions existed.
+alter table public.products add column if not exists description text;
+alter table public.products add column if not exists nutrition text;
 
 -- Idempotent upgrade for projects created before product variants existed.
 alter table public.products add column if not exists variant_group text;
