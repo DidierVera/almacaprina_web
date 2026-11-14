@@ -160,7 +160,11 @@ function renderBar() {
   $('barCount').textContent = `${units} ${units === 1 ? 'producto' : 'productos'}`;
   $('barTotal').textContent = money(subtotal());
   $('nextBtn').disabled = state.step === 'products' && units === 0;
+  $('clearBtn').hidden = units === 0;
 }
+$('clearBtn').addEventListener('click', () => {
+  if (confirm('¿Quitar todos los productos de tu pedido?')) cart.clear();
+});
 cart.subscribe(renderBar);
 
 /* ---------------- step 2: details, map and delivery ---------------- */
