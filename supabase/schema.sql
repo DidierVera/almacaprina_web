@@ -412,6 +412,7 @@ as $$
   select jsonb_build_object(
     'number', o.number, 'status', o.status, 'paymentStatus', o.payment_status,
     'deliveryDate', o.delivery_date, 'total', o.total,
+    'shippingFee', o.shipping_fee, 'paymentMethod', o.payment_method,
     'items', (select coalesce(jsonb_agg(jsonb_build_object('name', i.name, 'qty', i.qty, 'unitPrice', i.unit_price)), '[]'::jsonb)
                 from public.order_items i where i.order_id = o.id)
   )

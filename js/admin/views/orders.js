@@ -5,6 +5,8 @@ import { ADVANCE_LABEL, PAYMENT_METHOD, STATUS, STATUS_FLOW, paymentBadge } from
 import { badge, guarded, h, mapsLink, shortDay, toast, whatsappLink } from '../ui.js';
 
 const REFRESH_MS = 60_000;
+/** Private link the customer opens to follow the order (same site as the panel). */
+const trackingUrl = (o) => new URL(`../track.html?t=${o.token}`, location.href).href;
 const PROOF_URL_TTL_MS = 9 * 60 * 1000; // signed URLs last 10 minutes
 
 export async function mount(container) {
@@ -140,6 +142,8 @@ export async function mount(container) {
         h('span', { class: 'muted' }, `${formatKm(Number(o.km))} km${o.hub ? ` desde ${o.hub}` : ''} · Domicilio ${money(o.shipping_fee)}`),
         h('div', { class: 'row-actions' },
           h('a', { class: 'btn btn--secondary btn--sm', href: whatsappLink(o.customer_phone), target: '_blank', rel: 'noopener' }, 'WhatsApp'),
+          h('a', { class: 'btn btn--secondary btn--sm', target: '_blank', rel: 'noopener',
+            href: `${whatsappLink(o.customer_phone)}?text=${encodeURIComponent(`Hola ${o.customer_name.split(' ')[0]}, te escribimos de Alma Caprina. Puedes ver el estado de tu pedido ${o.number} aquí: ${trackingUrl(o)}`)}` }, 'Enviar seguimiento'),
           h('a', { class: 'btn btn--secondary btn--sm', href: mapsLink(o.lat, o.lng), target: '_blank', rel: 'noopener' }, 'Ver en mapa'))),
 
       section('Productos', h('dl', { class: 'lines' },

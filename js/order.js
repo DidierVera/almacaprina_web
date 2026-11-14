@@ -346,6 +346,7 @@ function renderConfirmation() {
   $('doneDetail').replaceChildren(...rows);
 
   const whatsapp = config.business.whatsapp.replace(/\D/g, '');
+  if (order.token) { $('trackBtn').href = `track.html?t=${order.token}`; $('trackBtn').hidden = false; }
   const button = $('whatsBtn');
   button.hidden = !whatsapp;
   if (whatsapp) button.href = `https://wa.me/${whatsapp}?text=${encodeURIComponent(`Hola, hice el pedido ${order.number}.`)}`;
