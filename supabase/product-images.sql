@@ -15,3 +15,8 @@ update public.products set image_url = '/images/products/greek-yogurt.jpg' where
 update public.products set image_url = '/images/products/ricotta-cheese.jpg' where id = 'aged-cheese';
 update public.products set image_url = '/images/products/rulo-cheese.jpg'    where id = 'queso-rulo';
 update public.products set image_url = '/images/products/feta-cheese.jpg'    where id = 'queso-feta';
+
+-- Chicken (all sizes), rainbow trout and eggs (all grades)
+update public.products set image_url = '/images/products/chicken.jpg' where id like 'country-chicken-%';
+update public.products set image_url = '/images/products/trout.jpg'   where id = 'trucha-arcoiris-deshuesada';
+update public.products set image_url = '/images/products/eggs.jpg'    where id in ('canasta-de-huevos', 'canasta-de-huevos-2', 'canasta-de-huevos-3');
