@@ -33,9 +33,24 @@ export async function roadKm(origin, dest, { roadFactor = 1.35, timeoutMs = 6000
   }
 }
 
-/** Fee for `km`. `covered: false` when beyond the coverage limit. */
-export function feeForKm(km, shipping) {
+/**
+ * Starting points deliveries are measured from. Older settings only have `origin`,
+ * which then acts as the single hub.
+ * @returns {Array<{label:string, lat:number, lng:number, surcharge:number}>}
+ */
+export function hubsOf(shipping) {
+  const list = shipping.hubs?.length ? shipping.hubs : [shipping.origin];
+  return list.map((h) => ({ label: h.label ?? '', lat: Number(h.lat), lng: Number(h.lng), surcharge: Number(h.surcharge) || 0 }));
+}
+
+/** The hub closest (in a straight line) to `point`. The server picks the same way. */
+export function nearestHub(point, shipping) {
+  return hubsOf(shipping).reduce((best, hub) => (haversineKm(hub, point) < haversineKm(best, point) ? hub : best));
+}
+
+/** Fee for `km` from `hub` (tier fee plus the hub's surcharge). `covered: false` when beyond the coverage limit. */
+export function feeForKm(km, shipping, hub = null) {
   if (km > shipping.maxKm) return { covered: false, fee: null };
   const tier = shipping.tiers.find((t) => km <= t.upToKm) ?? shipping.tiers.at(-1);
-  return { covered: true, fee: tier.fee };
+  return { covered: true, fee: tier.fee + (hub?.surcharge ?? 0) };
 }

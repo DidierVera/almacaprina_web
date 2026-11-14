@@ -1,7 +1,7 @@
 // Delivery route: the day's stops on a map and in order, with Google Maps links for the driver.
 import { addDays, bogotaNow, dayName, formatLong, money } from '../../format.js';
 import { loadLeaflet, OSM_TILES } from '../../leaflet-loader.js';
-import { haversineKm } from '../../shipping.js';
+import { haversineKm, hubsOf } from '../../shipping.js';
 import { getSettings, listOrders, updateOrder } from '../api.js';
 import { badge, guarded, h, mapsLink, shortDay, toast, whatsappLink } from '../ui.js';
 
@@ -27,7 +27,8 @@ function nearestOrder(origin, stops) {
 export async function mount(container) {
   const today = bogotaNow().iso;
   const [orders, settings] = await Promise.all([listOrders(), getSettings()]);
-  const origin = settings.shipping.origin;
+  const hubs = hubsOf(settings.shipping);
+  const origin = hubs[0]; // where the draft route starts on the map
   const state = { orders, day: null, stops: [], dirty: false };
 
   const days = [...new Set(orders.filter((o) => o.status !== 'cancelled' && o.delivery_date >= addDays(today, -7)).map((o) => o.delivery_date))].sort();
@@ -53,7 +54,13 @@ export async function mount(container) {
     const dayOrders = state.orders.filter((o) => o.delivery_date === state.day && o.status !== 'cancelled');
     const placed = dayOrders.filter((o) => o.route_position != null).sort((a, b) => a.route_position - b.route_position);
     const unplaced = dayOrders.filter((o) => o.route_position == null);
-    state.stops = [...placed, ...nearestOrder(placed.at(-1) ?? origin, unplaced)];
+    // Draft: stops grouped by starting point (in the order of the settings), nearest-first inside each group.
+    const known = new Set(hubs.map((h) => h.label));
+    const drafted = [
+      ...hubs.flatMap((hub) => nearestOrder(placed.at(-1) ?? hub, unplaced.filter((o) => o.hub === hub.label))),
+      ...nearestOrder(placed.at(-1) ?? origin, unplaced.filter((o) => !known.has(o.hub))),
+    ];
+    state.stops = [...placed, ...drafted];
     state.dirty = false; // nothing to save until the owner reorders (a first draft by proximity is still shown)
   }
 
@@ -98,6 +105,7 @@ export async function mount(container) {
           h('div', { class: 'stop__head' }, h('strong', {}, o.customer_name), o.number && h('span', { class: 'muted' }, `#${o.number}`),
             done ? badge('success', 'Entregado') : owes ? badge('warning', `Cobrar ${money(o.total)}`) : null),
           h('span', {}, `${o.address}, ${o.neighborhood}`),
+          o.hub && h('span', { class: 'muted' }, `Zona: ${o.hub}`),
           o.notes && h('span', { class: 'muted' }, o.notes),
           h('span', { class: 'muted' }, items),
           h('div', { class: 'row-actions' },
@@ -118,10 +126,11 @@ export async function mount(container) {
     const legs = [];
     for (let i = 0; i < todo.length; i += MAPS_LEG_STOPS) legs.push(todo.slice(i, i + MAPS_LEG_STOPS));
     linksEl.replaceChildren(...legs.map((leg, n) => {
-      const start = n === 0 ? origin : legs[n - 1].at(-1);
+      // The first leg has no fixed origin: Google Maps then starts from where the driver is.
+      const start = n === 0 ? null : legs[n - 1].at(-1);
       const dest = leg.at(-1);
       const via = leg.slice(0, -1).map((o) => `${o.lat},${o.lng}`).join('|');
-      const url = `https://www.google.com/maps/dir/?api=1&origin=${start.lat},${start.lng}&destination=${dest.lat},${dest.lng}&travelmode=driving${via ? `&waypoints=${encodeURIComponent(via)}` : ''}`;
+      const url = `https://www.google.com/maps/dir/?api=1${start ? `&origin=${start.lat},${start.lng}` : ''}&destination=${dest.lat},${dest.lng}&travelmode=driving${via ? `&waypoints=${encodeURIComponent(via)}` : ''}`;
       return h('a', { class: 'btn btn--primary btn--sm', href: url, target: '_blank', rel: 'noopener' },
         legs.length > 1 ? `Abrir tramo ${n + 1} en Google Maps` : 'Abrir ruta en Google Maps');
     }));

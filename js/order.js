@@ -4,7 +4,7 @@ import { nextDeliveryDate } from './delivery.js';
 import { bogotaNow, dayName, formatKm, formatLong, formatShort, money } from './format.js';
 import { errorMessage } from './messages.js';
 import { loadLeaflet, OSM_TILES } from './leaflet-loader.js';
-import { feeForKm, roadKm } from './shipping.js';
+import { feeForKm, hubsOf, nearestHub, roadKm } from './shipping.js';
 import { createOrder, getConfig, getProducts } from './store.js';
 import { groupProducts } from './catalog.js';
 import { bindSteppers, productCard, productGroupCard } from './ui/product-card.js';
@@ -186,8 +186,8 @@ async function initMap() {
   mapStarted = true;
   try {
     const L = await loadLeaflet();
-    const { origin } = config.shipping;
-    map = L.map('map', { scrollWheelZoom: false }).setView([origin.lat, origin.lng], 12);
+    const [first] = hubsOf(config.shipping);
+    map = L.map('map', { scrollWheelZoom: false }).setView([first.lat, first.lng], 11);
     L.tileLayer(OSM_TILES.url, OSM_TILES.options).addTo(map);
     map.on('click', (e) => setLocation(e.latlng.lat, e.latlng.lng));
     if (state.location) { placeMarker(state.location.lat, state.location.lng); map.setView([state.location.lat, state.location.lng], 15); }
@@ -211,14 +211,15 @@ async function setLocation(lat, lng, { pan = false } = {}) {
   const requestId = ++state.geoRequestId;
   setGeoStatus('Calculando domicilio…');
 
-  const { origin, roadFactor, maxKm } = config.shipping;
-  const { km, estimated } = await roadKm(origin, state.location, { roadFactor });
+  const { roadFactor, maxKm } = config.shipping;
+  const hub = nearestHub(state.location, config.shipping); // the customer never picks a starting point
+  const { km, estimated } = await roadKm(hub, state.location, { roadFactor });
   if (requestId !== state.geoRequestId) return; // the customer moved the pin while we were calculating
 
-  const result = feeForKm(km, config.shipping);
-  state.shipping = { km, estimated, ...result };
+  const result = feeForKm(km, config.shipping, hub);
+  state.shipping = { km, estimated, hub: hub.label, ...result };
   if (result.covered) {
-    setGeoStatus(`Domicilio: ${money(result.fee)} · ${estimated ? '≈ ' : ''}${formatKm(km)} km desde ${origin.label}`);
+    setGeoStatus(`Domicilio: ${money(result.fee)} · ${estimated ? '≈ ' : ''}${formatKm(km)} km desde ${hub.label}`);
   } else {
     setGeoStatus(`Tu ubicación queda a ${estimated ? '≈ ' : ''}${formatKm(km)} km, fuera de nuestra zona de entrega (máximo ${maxKm} km). Escríbenos y vemos cómo ayudarte.`, { error: true });
   }

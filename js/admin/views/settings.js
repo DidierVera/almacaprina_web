@@ -1,4 +1,4 @@
-// Settings: contact, shipping (origin point on a map + fee tiers) and payment methods.
+// Settings: contact, shipping (starting points on a map + fee tiers) and payment methods.
 import { loadLeaflet, OSM_TILES } from '../../leaflet-loader.js';
 import { getSettings, saveSetting } from '../api.js';
 import { guarded, h, switchInput, toast } from '../ui.js';
@@ -67,36 +67,63 @@ export async function mount(container) {
   /* ---------- shipping ---------- */
   {
     const ship = config.shipping;
-    const label = h('input', { id: 's-olabel', value: ship.origin.label ?? '' });
-    const lat = h('input', { id: 's-lat', type: 'number', step: 'any', value: String(ship.origin.lat) });
-    const lng = h('input', { id: 's-lng', type: 'number', step: 'any', value: String(ship.origin.lng) });
+    // Older settings only have `origin`: it becomes the first starting point.
+    const hubs = (ship.hubs?.length ? ship.hubs : [ship.origin]).map((x) => ({ label: x.label ?? '', lat: Number(x.lat), lng: Number(x.lng), surcharge: Number(x.surcharge) || 0 }));
     const maxKm = h('input', { id: 's-max', type: 'number', min: '1', step: '1', value: String(ship.maxKm) });
     const tiers = rowsEditor({
       rows: ship.tiers, minRows: 1, blank: { upToKm: '', fee: '' }, addLabel: 'Agregar tramo',
       columns: [{ key: 'upToKm', label: 'Hasta (km)', type: 'number', min: '0', step: '0.5' }, { key: 'fee', label: 'Domicilio (COP)', type: 'number', min: '0', step: '500' }],
     });
-    const mapEl = h('div', { class: 'admin-map', role: 'application', 'aria-label': 'Mapa para fijar el punto de partida' });
+    const mapEl = h('div', { class: 'admin-map', role: 'application', 'aria-label': 'Mapa de los puntos de partida' });
+    const hubList = h('div', { class: 'hubs' });
+    const markers = new Map(); // hub object -> Leaflet marker
 
-    const syncMarker = (() => {
-      let marker = null;
-      return (la, lo, pan = false) => {
-        if (!map || !Number.isFinite(la) || !Number.isFinite(lo)) return;
-        if (marker) marker.setLatLng([la, lo]);
-        else {
-          marker = window.L.marker([la, lo], { draggable: true }).addTo(map);
-          marker.on('dragend', () => { const p = marker.getLatLng(); lat.value = p.lat.toFixed(6); lng.value = p.lng.toFixed(6); });
-        }
-        if (pan) map.setView([la, lo], map.getZoom());
-      };
-    })();
-    [lat, lng].forEach((input) => input.addEventListener('change', () => syncMarker(lat.valueAsNumber, lng.valueAsNumber, true)));
+    function syncMarkers() {
+      if (!map) return;
+      for (const [hub, marker] of markers) if (!hubs.includes(hub)) { marker.remove(); markers.delete(hub); }
+      hubs.forEach((hub, i) => {
+        if (!Number.isFinite(hub.lat) || !Number.isFinite(hub.lng)) return;
+        let marker = markers.get(hub);
+        if (!marker) {
+          marker = window.L.marker([hub.lat, hub.lng], { draggable: true });
+          marker.on('dragend', () => { const p = marker.getLatLng(); hub.lat = Number(p.lat.toFixed(6)); hub.lng = Number(p.lng.toFixed(6)); renderHubs(); });
+          marker.addTo(map);
+          markers.set(hub, marker);
+        } else marker.setLatLng([hub.lat, hub.lng]);
+        marker.bindTooltip(`${i + 1}. ${hub.label || 'Sin nombre'}`);
+      });
+    }
+
+    function renderHubs() {
+      hubList.replaceChildren(...hubs.map((hub, i) => {
+        const num = (key, label, extra = {}) => h('div', { class: 'field' }, h('label', {}, label),
+          h('input', { type: 'number', step: 'any', value: Number.isFinite(hub[key]) ? String(hub[key]) : '', 'aria-label': `${label} del punto ${i + 1}`, ...extra,
+            onChange: (e) => { hub[key] = e.target.valueAsNumber; syncMarkers(); if (key !== 'surcharge' && map) map.panTo([hub.lat, hub.lng]); } }));
+        return h('fieldset', { class: 'hub-row' },
+          h('legend', {}, `Punto ${i + 1}`),
+          h('div', { class: 'form-grid' },
+            h('div', { class: 'field' }, h('label', {}, 'Nombre'),
+              h('input', { value: hub.label, placeholder: 'Caldas', maxLength: 80, 'aria-label': `Nombre del punto ${i + 1}`, onInput: (e) => { hub.label = e.target.value; syncMarkers(); } })),
+            num('lat', 'Latitud'), num('lng', 'Longitud'),
+            num('surcharge', 'Recargo (COP)', { step: '500', min: '0' })),
+          h('button', { class: 'btn btn--ghost btn--sm', type: 'button', disabled: hubs.length <= 1, onClick: () => { hubs.splice(i, 1); renderHubs(); syncMarkers(); } }, 'Quitar este punto'));
+      }));
+    }
+    renderHubs();
 
     loadLeaflet().then((L) => {
-      map = L.map(mapEl, { scrollWheelZoom: false }).setView([ship.origin.lat, ship.origin.lng], 12);
+      map = L.map(mapEl, { scrollWheelZoom: false }).setView([hubs[0].lat, hubs[0].lng], 10);
       L.tileLayer(OSM_TILES.url, OSM_TILES.options).addTo(map);
-      map.on('click', (e) => { lat.value = e.latlng.lat.toFixed(6); lng.value = e.latlng.lng.toFixed(6); syncMarker(e.latlng.lat, e.latlng.lng); });
-      syncMarker(ship.origin.lat, ship.origin.lng);
+      syncMarkers();
+      const points = hubs.filter((x) => Number.isFinite(x.lat) && Number.isFinite(x.lng)).map((x) => [x.lat, x.lng]);
+      if (points.length > 1) map.fitBounds(points, { padding: [40, 40] });
     }).catch(() => { mapEl.textContent = 'No pudimos cargar el mapa. Puedes escribir las coordenadas a mano.'; });
+
+    const addHub = h('button', { class: 'btn btn--secondary btn--sm', type: 'button', onClick: () => {
+      const c = map?.getCenter();
+      hubs.push({ label: '', lat: c ? Number(c.lat.toFixed(6)) : NaN, lng: c ? Number(c.lng.toFixed(6)) : NaN, surcharge: 0 });
+      renderHubs(); syncMarkers();
+    } }, 'Agregar punto de partida');
 
     const save = h('button', { class: 'btn btn--primary btn--sm', type: 'submit' }, 'Guardar domicilio');
     container.append(h('form', { class: 'panel', onSubmit: async (e) => {
@@ -105,21 +132,30 @@ export async function mount(container) {
       const valid = rows.every((r) => Number.isFinite(r.upToKm) && r.upToKm > 0 && Number.isInteger(r.fee) && r.fee >= 0)
         && new Set(rows.map((r) => r.upToKm)).size === rows.length;
       if (!valid) { toast('Revisa los tramos: cada distancia debe ser mayor que 0 y no repetirse, y el valor debe ser un número entero.', { error: true }); return; }
-      if (!Number.isFinite(lat.valueAsNumber) || !Number.isFinite(lng.valueAsNumber) || !(maxKm.valueAsNumber >= 1)) { toast('Revisa el punto de partida y la distancia máxima.', { error: true }); return; }
+      const names = hubs.map((x) => x.label.trim());
+      if (hubs.some((x, i) => !names[i] || !Number.isFinite(x.lat) || !Number.isFinite(x.lng) || !Number.isInteger(x.surcharge) || x.surcharge < 0)
+        || new Set(names.map((n) => n.toLowerCase())).size !== names.length) {
+        toast('Revisa los puntos de partida: cada uno necesita un nombre distinto, su ubicación y un recargo entero (0 si no aplica).', { error: true }); return;
+      }
+      if (!(maxKm.valueAsNumber >= 1)) { toast('Revisa la distancia máxima.', { error: true }); return; }
+      const clean = hubs.map((x, i) => ({ label: names[i], lat: x.lat, lng: x.lng, surcharge: x.surcharge }));
       await saveSection(save, 'shipping', () => ({
         ...ship,
-        origin: { lat: lat.valueAsNumber, lng: lng.valueAsNumber, label: label.value.trim() },
+        hubs: clean,
+        origin: { lat: clean[0].lat, lng: clean[0].lng, label: clean[0].label }, // kept equal to the first point for older code
         maxKm: maxKm.valueAsNumber,
         tiers: rows,
       }), 'Domicilio guardado.');
     } },
     h('h2', {}, 'Domicilio'),
-    h('p', { class: 'hint' }, 'El valor se calcula con los kilómetros de ruta desde tu punto de partida hasta la ubicación del cliente. Toca el mapa o arrastra el pin para cambiarlo.'),
+    h('p', { class: 'hint' }, 'El valor se calcula con los kilómetros de ruta desde el punto de partida más cercano a la ubicación del cliente; el cliente no elige. Arrastra cada pin en el mapa para ajustarlo.'),
     mapEl,
-    h('div', { class: 'form-grid' }, field('s-olabel', 'Nombre del punto', label), field('s-lat', 'Latitud', lat), field('s-lng', 'Longitud', lng)),
-    h('h3', { style: 'font-family:var(--font-body);font-size:1rem;margin-top:8px' }, 'Tarifas por distancia'),
+    hubList,
+    addHub,
+    h('h3', { style: 'font-family:var(--font-body);font-size:1rem;margin-top:12px' }, 'Tarifas por distancia'),
+    h('p', { class: 'hint' }, 'Las mismas para todos los puntos. El recargo de cada punto se suma a la tarifa.'),
     tiers.element,
-    h('div', { class: 'form-grid', style: 'margin-top:8px' }, field('s-max', 'Distancia máxima de entrega (km)', maxKm, '(más lejos no se puede pedir)')),
+    h('div', { class: 'form-grid', style: 'margin-top:8px' }, field('s-max', 'Distancia máxima de entrega (km)', maxKm, '(medida desde el punto más cercano)')),
     h('div', { class: 'panel__actions' }, save)));
   }
 

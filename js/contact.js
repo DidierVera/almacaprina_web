@@ -1,5 +1,6 @@
 // Contact page: cards built from the contact data the owner keeps in the admin settings.
 import { initLayout } from './layout.js';
+import { hubsOf } from './shipping.js';
 import { getConfig } from './store.js';
 
 initLayout('contact');
@@ -32,5 +33,6 @@ list.replaceChildren(...cards.map(([title, sub, href]) => {
 }));
 if (!cards.length) list.textContent = 'Pronto publicaremos nuestros datos de contacto.';
 
-const { maxKm, origin } = config.shipping;
-document.getElementById('contactArea').textContent = `Entregamos a domicilio hasta ${maxKm} km desde ${origin.label}. Mira las próximas fechas de entrega en la página de inicio.`;
+const labels = hubsOf(config.shipping).map((h) => h.label).filter(Boolean);
+const places = labels.length > 1 ? `${labels.slice(0, -1).join(', ')} y ${labels.at(-1)}` : labels[0];
+document.getElementById('contactArea').textContent = `Entregamos a domicilio hasta ${config.shipping.maxKm} km desde ${places}. Mira las próximas fechas de entrega en la página de inicio.`;

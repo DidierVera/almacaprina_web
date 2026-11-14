@@ -43,7 +43,7 @@ Deno.serve(async (req) => {
     '',
     lines,
     '',
-    `Envío: ${money(order.shipping_fee)} (${order.km} km)`,
+    `Envío: ${money(order.shipping_fee)} (${order.km} km${order.hub ? ` desde ${esc(order.hub)}` : ''})`,
     `<b>Total: ${money(order.total)}</b>`,
     `Pago: ${METHODS[order.payment_method] ?? order.payment_method}`,
     `Entrega: ${esc(order.delivery_date)}`,

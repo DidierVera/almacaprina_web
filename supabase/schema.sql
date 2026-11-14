@@ -150,6 +150,7 @@ create table if not exists public.orders (
   lat            double precision not null,
   lng            double precision not null,
   km             numeric(6,1) not null,
+  hub            text,                                       -- starting point the fee was measured from
 
   delivery_date  date not null,
   route_position integer,                                    -- stop order within that day's route
@@ -165,6 +166,7 @@ create table if not exists public.orders (
 
   unique (seq), unique (token)
 );
+alter table public.orders add column if not exists hub text;   -- for databases created before hubs existed
 create index if not exists orders_delivery_idx on public.orders (delivery_date, route_position);
 create index if not exists orders_phone_idx on public.orders (customer_phone, created_at);
 
@@ -257,6 +259,9 @@ declare
   v_method text := pay->>'method';
   v_proof  text := nullif(pay->>'proofPath', '');
 
+  v_hub   jsonb;
+  v_hub_label text;
+  v_surcharge integer;
   o_lat   double precision;
   o_lng   double precision;
   v_lat   double precision;
@@ -308,8 +313,26 @@ begin
   if v_lat is null or v_lng is null or abs(v_lat) > 90 or abs(v_lng) > 180 then
     raise exception 'LOCATION_REQUIRED';
   end if;
-  o_lat := (ship->'origin'->>'lat')::double precision;
-  o_lng := (ship->'origin'->>'lng')::double precision;
+  -- The starting point is the hub closest in a straight line (settings.shipping.hubs, or the single `origin`).
+  select s.hub into v_hub
+    from (
+      select e.hub,
+             6371 * 2 * asin(sqrt(
+               power(sin(radians(v_lat - (e.hub->>'lat')::double precision) / 2), 2)
+               + cos(radians((e.hub->>'lat')::double precision)) * cos(radians(v_lat))
+                 * power(sin(radians(v_lng - (e.hub->>'lng')::double precision) / 2), 2)
+             )) as dist
+        from jsonb_array_elements(
+               case when jsonb_typeof(ship->'hubs') = 'array' and jsonb_array_length(ship->'hubs') > 0
+                    then ship->'hubs' else jsonb_build_array(ship->'origin') end
+             ) as e(hub)
+    ) s
+   order by s.dist
+   limit 1;
+  o_lat := (v_hub->>'lat')::double precision;
+  o_lng := (v_hub->>'lng')::double precision;
+  v_hub_label := left(coalesce(v_hub->>'label', ''), 80);
+  v_surcharge := coalesce((v_hub->>'surcharge')::integer, 0);
   v_hav := (6371 * 2 * asin(sqrt(
              power(sin(radians(v_lat - o_lat) / 2), 2)
              + cos(radians(o_lat)) * cos(radians(v_lat)) * power(sin(radians(v_lng - o_lng) / 2), 2)
@@ -329,6 +352,7 @@ begin
       from jsonb_array_elements(ship->'tiers') t
      order by (t->>'upToKm')::numeric desc limit 1;
   end if;
+  v_fee := v_fee + v_surcharge;
 
   v_date := public.next_delivery_date();
   if v_date is null then raise exception 'NO_DELIVERY_DATE'; end if;
@@ -340,9 +364,9 @@ begin
   end if;
 
   insert into public.orders (customer_name, customer_phone, customer_email, address, neighborhood, notes,
-                             lat, lng, km, delivery_date, shipping_fee, payment_method, payment_status, proof_path)
+                             lat, lng, km, hub, delivery_date, shipping_fee, payment_method, payment_status, proof_path)
   values (v_name, v_phone, nullif(v_email, ''), v_addr, v_hood, nullif(v_notes, ''),
-          v_lat, v_lng, v_km, v_date, v_fee, v_method,
+          v_lat, v_lng, v_km, nullif(v_hub_label, ''), v_date, v_fee, v_method,
           case when v_method = 'transfer' then 'under_review' else 'pending' end, v_proof)
   returning * into v_order;
 

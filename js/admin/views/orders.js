@@ -137,7 +137,7 @@ export async function mount(container) {
 
       section('Entrega',
         h('span', {}, formatLong(o.delivery_date)),
-        h('span', { class: 'muted' }, `${formatKm(Number(o.km))} km · Domicilio ${money(o.shipping_fee)}`),
+        h('span', { class: 'muted' }, `${formatKm(Number(o.km))} km${o.hub ? ` desde ${o.hub}` : ''} · Domicilio ${money(o.shipping_fee)}`),
         h('div', { class: 'row-actions' },
           h('a', { class: 'btn btn--secondary btn--sm', href: whatsappLink(o.customer_phone), target: '_blank', rel: 'noopener' }, 'WhatsApp'),
           h('a', { class: 'btn btn--secondary btn--sm', href: mapsLink(o.lat, o.lng), target: '_blank', rel: 'noopener' }, 'Ver en mapa'))),
