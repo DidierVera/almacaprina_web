@@ -114,6 +114,10 @@
           </div>
           <div id="map" class="map" role="application" aria-label="Mapa para marcar la ubicación de entrega"></div>
           <p class="notice" id="geoStatus" aria-live="polite">Aún no has marcado tu ubicación.</p>
+          <div class="address-hint" id="addressHint" hidden aria-live="polite">
+            <p id="addressHintText"></p>
+            <button type="button" class="btn btn--secondary btn--sm" id="addressHintBtn" hidden>Usar esta dirección</button>
+          </div>
           <div class="places" id="places" hidden>
             <p class="places__title" id="placesTitle"></p>
             <ul class="places__list" id="placeList"></ul>

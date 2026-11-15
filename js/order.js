@@ -4,7 +4,7 @@ import { nextDeliveryDate } from './delivery.js';
 import { bogotaNow, dayName, formatKm, formatLong, formatShort, money } from './format.js';
 import { errorMessage } from './messages.js';
 import { loadLeaflet, OSM_TILES } from './leaflet-loader.js';
-import { findPlaces } from './geocode.js';
+import { findPlaces, normalizeStreet, reversePlace } from './geocode.js';
 import { POLICY_VERSION } from './legal.js';
 import { feeForKm, hubsOf, nearestHub, roadKm } from './shipping.js';
 import { createOrder, getConfig, getProducts } from './store.js';
@@ -209,7 +209,7 @@ function placeMarker(lat, lng) {
   marker.on('dragend', () => { const p = marker.getLatLng(); setLocation(p.lat, p.lng); });
 }
 
-async function setLocation(lat, lng, { pan = false } = {}) {
+async function setLocation(lat, lng, { pan = false, reverse = true } = {}) {
   state.location = { lat, lng };
   state.shipping = null;
   renderLocationCard();
@@ -232,7 +232,59 @@ async function setLocation(lat, lng, { pan = false } = {}) {
   }
   renderLocationCard();
   saveCustomer();
+  if (reverse) suggestAddressFromPin(requestId);
 }
+
+/* Address from the map pin: fills what is empty, and offers to replace what differs. */
+const plainText = (t) => String(t).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/\s+/g, ' ').trim();
+let hintPlace = null;
+
+/** A typed street number ("# 44-12") is kept when the street name is replaced by the map's. */
+const numberSuffix = (typed) => typed.match(/\s*(?:#|n[o°º]\.?|nro\.?)\s*.+$/i)?.[0] ?? '';
+
+function applyPlace(place) {
+  const typed = $('f-address').value.trim();
+  const road = place.road ? `${place.road}${place.houseNumber ? ` # ${place.houseNumber}` : numberSuffix(typed)}` : typed;
+  const cityChanged = place.city && $('f-city').value.trim() && plainText(place.city) !== plainText($('f-city').value);
+  // A neighborhood from another municipality would be wrong: leave it empty for the customer to fill in.
+  const neighborhood = place.neighborhood || (cityChanged ? '' : $('f-neighborhood').value.trim());
+  const values = { 'f-address': road, 'f-neighborhood': neighborhood, 'f-city': place.city || $('f-city').value.trim() };
+  for (const [id, value] of Object.entries(values)) {
+    const control = $(id);
+    control.value = value;
+    clearFieldError(control);
+  }
+  saveCustomer();
+}
+
+async function suggestAddressFromPin(requestId) {
+  $('addressHint').hidden = true;
+  let place = null;
+  try { place = await reversePlace(state.location.lat, state.location.lng); } catch { return; }
+  if (!place || requestId !== state.geoRequestId) return; // the pin moved again meanwhile
+
+  const typed = { address: $('f-address').value.trim(), neighborhood: $('f-neighborhood').value.trim(), city: $('f-city').value.trim() };
+  const empty = !typed.address && !typed.city;
+  if (empty) {
+    applyPlace(place);
+    $('addressHintText').textContent = `Completamos tu dirección con el mapa: ${place.label}. Revísala y agrega el número si falta.`;
+    $('addressHintBtn').hidden = true;
+    $('addressHint').hidden = false;
+    return;
+  }
+  const sameStreet = place.road && plainText(normalizeStreet(typed.address)).includes(plainText(place.road));
+  const sameCity = !place.city || !typed.city || plainText(place.city) === plainText(typed.city);
+  if (sameStreet && sameCity) return; // what is typed already matches the map
+  hintPlace = place;
+  $('addressHintText').textContent = `Según el mapa, este punto está en: ${place.label}.`;
+  $('addressHintBtn').hidden = false;
+  $('addressHint').hidden = false;
+}
+$('addressHintBtn').addEventListener('click', () => {
+  if (hintPlace) applyPlace(hintPlace);
+  $('addressHintText').textContent = 'Listo, actualizamos tu dirección con la del mapa.';
+  $('addressHintBtn').hidden = true;
+});
 
 /* The card under the address: shows whether the delivery point is set, and opens the map dialog. */
 function renderLocationCard() {
@@ -261,20 +313,17 @@ function renderLocationCard() {
 
 /** Opens the map dialog. It needs the municipality and the address to search; otherwise it points at what is missing. */
 async function openMapDialog() {
-  const missing = ['f-city', 'f-address'].map($).filter((c) => !c.value.trim());
-  if (missing.length) {
-    for (const control of missing) markInvalid(control, control.id === 'f-city' ? 'Escribe tu municipio para ubicar tu dirección.' : 'Escribe tu dirección para ubicarla en el mapa.');
-    missing[0].focus();
-    return;
-  }
   const where = ['f-address', 'f-neighborhood', 'f-city'].map((id) => $(id).value.trim()).filter(Boolean).join(', ');
-  $('mapQuery').textContent = where;
+  const canSearch = !!($('f-address').value.trim() && $('f-city').value.trim());
+  $('mapQuery').textContent = where || 'Aún no escribiste tu dirección. Toca el mapa y la completamos por ti.';
   placesBox.hidden = true;
+  $('addressHint').hidden = true;
   $('mapDialog').showModal();
   await initMap();
   setTimeout(() => map?.invalidateSize(), 150);
   if (state.location) { if (map) map.setView([state.location.lat, state.location.lng], 16); }
-  else searchAddress();
+  else if (canSearch) searchAddress();
+  else setGeoStatus('Toca el mapa donde recibirás tu pedido, o usa tu ubicación actual.');
 }
 $('pinBtn').addEventListener('click', openMapDialog);
 $('locationBtn').addEventListener('click', openMapDialog);
@@ -319,8 +368,7 @@ async function searchAddress() {
   const neighborhood = $('f-neighborhood').value.trim();
   const city = $('f-city').value.trim();
   if (!address || !city) {
-    setGeoStatus('Escribe tu dirección y tu municipio para buscarla en el mapa.', { error: true });
-    (address ? $('f-city') : $('f-address')).focus();
+    setGeoStatus('Para buscar, escribe tu municipio y tu dirección en el formulario. O toca el mapa y la completamos por ti.', { error: true });
     return;
   }
   const id = ++searchId;
@@ -341,7 +389,7 @@ async function searchAddress() {
       setGeoStatus('No encontramos esa dirección exacta. Elige un punto de referencia cercano o toca el mapa.', { error: true });
       showPlaces('Puntos cercanos como referencia. Elige uno y arrastra el pin hasta tu puerta:', results);
     } else {
-      await setLocation(results[0].lat, results[0].lng, { pan: true });
+      await setLocation(results[0].lat, results[0].lng, { pan: true, reverse: false }); // it already matches what was typed
       const exact = level === 'address';
       showPlaces(exact
         ? 'Encontramos tu dirección. Revisa que el pin esté en tu puerta y arrástralo si hace falta.'

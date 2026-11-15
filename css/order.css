@@ -160,3 +160,8 @@ body { padding-bottom: 110px; }
 .modal--map .geo__actions { margin-bottom: 0; }
 .modal--map .places { margin: 0; max-height: 28vh; overflow-y: auto; }
 @media (max-width: 520px) { .modal--map { width: calc(100% - 8px); max-height: calc(100dvh - 8px); } .modal--map .map { height: 260px; } .input-action__btn span { display: none; } }
+
+.address-hint { display: grid; gap: 8px; padding: 10px 12px; border-radius: var(--radius-md); background: #EDF1E3; }
+.address-hint[hidden] { display: none; }
+.address-hint p { margin: 0; font-size: .9375rem; }
+.address-hint .btn { justify-self: start; }

@@ -42,6 +42,7 @@ const shortLabel = (item) => {
 };
 
 async function search(query, { signal } = {}) {
+  await takeTurn();
   const params = new URLSearchParams({
     q: query, format: 'jsonv2', countrycodes: 'co', limit: '5', addressdetails: '1',
     'accept-language': 'es', viewbox: VIEWBOX, bounded: '1',
@@ -64,6 +65,15 @@ function rankByNeighborhood(results, neighborhood) {
 
 const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
+// Nominatim allows one request per second: every call (search or reverse) waits its turn.
+let nextSlot = 0;
+async function takeTurn() {
+  const now = Date.now();
+  const mine = Math.max(now, nextSlot);
+  nextSlot = mine + GAP_MS;
+  if (mine > now) await wait(mine - now);
+}
+
 /**
  * Tries the most specific search first and relaxes it step by step.
  * @returns {{ level: 'address'|'street'|'multiple'|'area'|'none', results: Array<{lat,lng,label,level}> }}
@@ -82,12 +92,9 @@ export async function findPlaces({ address, neighborhood, city }, { signal } = {
   ].filter(Boolean);
 
   const tried = new Set();
-  let first = true;
   for (const query of queries) {
     if (tried.has(query)) continue;
     tried.add(query);
-    if (!first) await wait(GAP_MS);
-    first = false;
     const results = await search(query, { signal });
     if (!results.length) continue;
     const ranked = dedupe(rankByNeighborhood(results, neighborhood));
@@ -118,4 +125,33 @@ function classify(ranked, { street, neighborhood }) {
 function dedupe(results) {
   const seen = new Set();
   return results.filter((r) => { const key = `${r.lat.toFixed(4)},${r.lng.toFixed(4)}`; if (seen.has(key)) return false; seen.add(key); return true; });
+}
+
+/** "Perímetro Urbano Medellín" → "Medellín"; "Cabecera Municipal de Caldas" → "Caldas". */
+function cleanCity(name) {
+  return String(name).replace(/^per[ií]metro urbano\s+/i, '').replace(/^cabecera municipal de\s+/i, '').trim();
+}
+
+/**
+ * The address OpenStreetMap knows for a map point (reverse geocoding), or null.
+ * @returns {Promise<{road:string, houseNumber:string, neighborhood:string, city:string, label:string}|null>}
+ */
+export async function reversePlace(lat, lng, { signal } = {}) {
+  await takeTurn();
+  const params = new URLSearchParams({ format: 'jsonv2', lat: String(lat), lon: String(lng), zoom: '18', addressdetails: '1', 'accept-language': 'es' });
+  const res = await fetch(`https://nominatim.openstreetmap.org/reverse?${params}`, { signal });
+  if (!res.ok) return null;
+  const data = await res.json();
+  const a = data.address;
+  if (!a) return null;
+  const road = a.road ?? a.pedestrian ?? a.footway ?? a.path ?? '';
+  const place = {
+    road,
+    houseNumber: a.house_number ?? '',
+    neighborhood: a.neighbourhood ?? a.quarter ?? a.suburb ?? a.city_district ?? '',
+    city: cleanCity(a.municipality ?? a.town ?? a.village ?? a.city ?? ''),
+    label: '',
+  };
+  place.label = [place.road && `${place.road}${place.houseNumber ? ` # ${place.houseNumber}` : ''}`, place.neighborhood, place.city].filter(Boolean).join(', ');
+  return place.road || place.neighborhood || place.city ? place : null;
 }
