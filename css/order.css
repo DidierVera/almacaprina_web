@@ -136,3 +136,27 @@ body { padding-bottom: 110px; }
 .places__item { width: 100%; text-align: left; padding: 10px 12px; border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--bg-cream); font: inherit; font-size: .9375rem; cursor: pointer; }
 .places__item:hover, .places__item:focus-visible { border-color: var(--brand-olive); }
 .places__item[aria-pressed="true"] { border-color: var(--brand-olive); background: #EDF1E3; font-weight: 600; }
+
+/* Address field with the "Ubicar" button, the location card and the map dialog */
+.form-section { font-size: 1.125rem; margin: 22px 0 12px; }
+.input-action { display: flex; gap: 8px; align-items: stretch; }
+.input-action input { flex: 1; min-width: 0; }
+.input-action__btn { flex: none; display: inline-flex; align-items: center; gap: 6px; padding: 0 14px; }
+
+.location-card { display: grid; gap: 10px; padding: 14px 16px; margin: -4px 0 16px; border: 2px dashed var(--border); border-radius: var(--radius-md); background: var(--surface-white); }
+.location-card__text { margin: 0; font-weight: 500; line-height: 1.45; }
+.location-card--set { border-style: solid; border-color: var(--brand-olive); background: #EDF1E3; }
+.location-card--bad { border-style: solid; border-color: var(--danger); background: #FDF3F3; }
+.location-card.is-invalid { border-style: solid; border-color: var(--danger); background: #FDF3F3; }
+.location-card.is-invalid .location-card__text { color: var(--danger); font-weight: 600; }
+
+.modal--map { width: min(720px, calc(100% - 16px)); }
+.modal--map .modal__inner { gap: 10px; padding: 16px; }
+.map-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.map-head h2 { margin: 0; font-size: 1.25rem; }
+.map-help { margin: 0; font-size: .875rem; }
+.map-query { margin: 0; font-size: .875rem; font-weight: 600; color: var(--brand-olive); overflow-wrap: anywhere; }
+.modal--map .map { height: 300px; }
+.modal--map .geo__actions { margin-bottom: 0; }
+.modal--map .places { margin: 0; max-height: 28vh; overflow-y: auto; }
+@media (max-width: 520px) { .modal--map { width: calc(100% - 8px); max-height: calc(100dvh - 8px); } .modal--map .map { height: 260px; } .input-action__btn span { display: none; } }

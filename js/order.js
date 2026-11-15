@@ -114,7 +114,7 @@ function show(requested) {
     $('nextBtn').textContent = step === 'payment' ? 'Confirmar pedido' : 'Continuar';
   }
 
-  if (step === 'details') { renderDelivery(); initMap(); }
+  if (step === 'details') renderDelivery();
   if (step === 'payment') renderPayment();
   if (step === 'confirmation') renderConfirmation();
   renderBar();
@@ -198,7 +198,7 @@ async function initMap() {
     map.on('click', (e) => setLocation(e.latlng.lat, e.latlng.lng));
     if (state.location) { placeMarker(state.location.lat, state.location.lng); map.setView([state.location.lat, state.location.lng], 15); }
   } catch {
-    setGeoStatus('No pudimos cargar el mapa. Usa el botón "Usar mi ubicación".', { error: true });
+    setGeoStatus('No pudimos cargar el mapa. Usa el botón "Usar mi ubicación actual".', { error: true });
   }
 }
 
@@ -212,6 +212,7 @@ function placeMarker(lat, lng) {
 async function setLocation(lat, lng, { pan = false } = {}) {
   state.location = { lat, lng };
   state.shipping = null;
+  renderLocationCard();
   placeMarker(lat, lng);
   if (pan && map) map.setView([lat, lng], 15);
   const requestId = ++state.geoRequestId;
@@ -229,8 +230,56 @@ async function setLocation(lat, lng, { pan = false } = {}) {
   } else {
     setGeoStatus(`Tu ubicación queda a ${estimated ? '≈ ' : ''}${formatKm(km)} km, fuera de nuestra zona de entrega (máximo ${maxKm} km). Escríbenos y vemos cómo ayudarte.`, { error: true });
   }
+  renderLocationCard();
   saveCustomer();
 }
+
+/* The card under the address: shows whether the delivery point is set, and opens the map dialog. */
+function renderLocationCard() {
+  const card = $('locationCard');
+  const s = state.shipping;
+  card.classList.remove('location-card--set', 'location-card--bad', 'is-invalid');
+  const button = $('locationBtn');
+  button.className = 'btn btn--primary';
+  if (!state.location) {
+    $('locationText').textContent = 'Marca en el mapa el punto exacto donde recibirás tu pedido. Con eso calculamos el domicilio.';
+    button.textContent = 'Marcar en el mapa';
+  } else if (!s) {
+    $('locationText').textContent = 'Calculando el domicilio…';
+    button.textContent = 'Cambiar ubicación'; button.className = 'btn btn--secondary';
+  } else if (s.covered) {
+    card.classList.add('location-card--set');
+    $('locationText').textContent = `✓ Ubicación marcada · Domicilio ${money(s.fee)} (${s.estimated ? '≈ ' : ''}${formatKm(s.km)} km desde ${s.hub})`;
+    button.textContent = 'Cambiar ubicación'; button.className = 'btn btn--secondary';
+  } else {
+    card.classList.add('location-card--bad');
+    $('locationText').textContent = `Esta ubicación queda fuera de nuestra zona de entrega (máximo ${config.shipping.maxKm} km). Cámbiala o escríbenos y vemos cómo ayudarte.`;
+    button.textContent = 'Cambiar ubicación'; button.className = 'btn btn--secondary';
+  }
+  $('mapConfirm').disabled = !s?.covered;
+}
+
+/** Opens the map dialog. It needs the municipality and the address to search; otherwise it points at what is missing. */
+async function openMapDialog() {
+  const missing = ['f-city', 'f-address'].map($).filter((c) => !c.value.trim());
+  if (missing.length) {
+    for (const control of missing) markInvalid(control, control.id === 'f-city' ? 'Escribe tu municipio para ubicar tu dirección.' : 'Escribe tu dirección para ubicarla en el mapa.');
+    missing[0].focus();
+    return;
+  }
+  const where = ['f-address', 'f-neighborhood', 'f-city'].map((id) => $(id).value.trim()).filter(Boolean).join(', ');
+  $('mapQuery').textContent = where;
+  placesBox.hidden = true;
+  $('mapDialog').showModal();
+  await initMap();
+  setTimeout(() => map?.invalidateSize(), 150);
+  if (state.location) { if (map) map.setView([state.location.lat, state.location.lng], 16); }
+  else searchAddress();
+}
+$('pinBtn').addEventListener('click', openMapDialog);
+$('locationBtn').addEventListener('click', openMapDialog);
+$('mapClose').addEventListener('click', () => $('mapDialog').close());
+$('mapConfirm').addEventListener('click', () => { $('mapDialog').close(); $('locationCard').scrollIntoView({ block: 'center', behavior: 'smooth' }); });
 
 $('locateBtn').addEventListener('click', () => {
   if (!navigator.geolocation) { setGeoStatus('Tu navegador no permite ubicarte. Toca el mapa.', { error: true }); return; }
@@ -303,14 +352,10 @@ async function searchAddress() {
   } catch {
     if (id === searchId) setGeoStatus('No pudimos buscar la dirección ahora. Toca el mapa para marcarla.', { error: true });
   } finally {
-    if (id === searchId) { button.disabled = false; button.textContent = 'Buscar mi dirección en el mapa'; }
+    if (id === searchId) { button.disabled = false; button.textContent = 'Buscar mi dirección'; }
   }
 }
 $('findBtn').addEventListener('click', searchAddress);
-// Once the customer has typed address, neighborhood and municipality and there is no pin yet, search on their behalf.
-$('f-city').addEventListener('change', () => {
-  if (!state.location && $('f-address').value.trim() && $('f-neighborhood').value.trim() && $('f-city').value.trim()) searchAddress();
-});
 
 /* Visible validation: a red outline and a message next to each missing or wrong field. */
 const FIELD_ERRORS = {
@@ -327,23 +372,26 @@ function clearFieldError(control) {
   control.removeAttribute('aria-invalid');
 }
 
+/** Marks one control as wrong, with a red outline and a message next to it. */
+function markInvalid(control, text) {
+  const holder = control.closest('.field, .consent');
+  clearFieldError(control);
+  holder.classList.add('is-invalid');
+  control.setAttribute('aria-invalid', 'true');
+  const message = document.createElement('p');
+  message.className = 'field-error';
+  message.id = `err-${control.id}`;
+  message.setAttribute('role', 'alert');
+  message.textContent = text;
+  holder.append(message);
+  control.setAttribute('aria-describedby', message.id);
+}
+
 /** Returns true when the form is valid; otherwise marks every problem and focuses the first one. */
 function showFormErrors() {
   const invalid = [...form.elements].filter((c) => c.willValidate && !c.validity.valid);
   [...form.elements].forEach((c) => { if (c.willValidate && c.validity.valid) clearFieldError(c); });
-  for (const control of invalid) {
-    const holder = control.closest('.field, .consent');
-    clearFieldError(control);
-    holder.classList.add('is-invalid');
-    control.setAttribute('aria-invalid', 'true');
-    const message = document.createElement('p');
-    message.className = 'field-error';
-    message.id = `err-${control.id}`;
-    message.setAttribute('role', 'alert');
-    message.textContent = fieldError(control);
-    holder.append(message);
-    control.setAttribute('aria-describedby', message.id);
-  }
+  for (const control of invalid) markInvalid(control, fieldError(control));
   if (invalid.length) {
     invalid[0].focus();
     invalid[0].scrollIntoView({ block: 'center', behavior: 'smooth' });
@@ -480,9 +528,15 @@ $('nextBtn').addEventListener('click', () => {
 
   if (state.step === 'details') {
     if (!showFormErrors()) return;
-    if (!state.location) { setGeoStatus('Marca tu ubicación en el mapa para calcular el domicilio.', { error: true }); $('locateBtn').focus(); return; }
-    if (!state.shipping) { setGeoStatus('Estamos calculando tu domicilio, un momento…'); return; }
-    if (!state.shipping.covered) return;
+    if (!state.location || !state.shipping?.covered) {
+      const card = $('locationCard');
+      card.classList.add('is-invalid');
+      if (!state.location) $('locationText').textContent = 'Falta marcar en el mapa el punto donde recibirás tu pedido.';
+      else if (!state.shipping) $('locationText').textContent = 'Estamos calculando tu domicilio, un momento…';
+      card.scrollIntoView({ block: 'center', behavior: 'smooth' });
+      $('locationBtn').focus({ preventScroll: true });
+      return;
+    }
     saveCustomer();
     go('payment');
     return;
