@@ -14,6 +14,7 @@ const ERROR_MESSAGES = {
   CONSENT_REQUIRED: 'Debes autorizar el tratamiento de tus datos para hacer el pedido.',
   LOCATION_REQUIRED: 'Marca tu ubicación en el mapa.',
   OUT_OF_COVERAGE: 'Tu dirección queda fuera de la zona de entrega.',
+  INVALID_DELIVERY_DATE: 'Esa fecha de entrega ya no está disponible. Elige otra.',
   NO_DELIVERY_DATE: 'No hay fechas de entrega disponibles por ahora.',
   TOO_MANY_ORDERS: 'Demasiados pedidos seguidos. Escríbenos por WhatsApp.',
   UPLOAD_FAILED: 'No pudimos subir el comprobante. Revisa que sea una imagen o PDF de máximo 5 MB.',

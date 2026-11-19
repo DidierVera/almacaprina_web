@@ -165,3 +165,15 @@ body { padding-bottom: 110px; }
 .address-hint[hidden] { display: none; }
 .address-hint p { margin: 0; font-size: .9375rem; }
 .address-hint .btn { justify-self: start; }
+
+/* Delivery date picker */
+.delivery-pick { margin: 20px 0; padding: 16px; background: var(--surface-sand); border: 0; border-radius: var(--radius-md); }
+.delivery-pick legend { font-family: var(--font-display); font-size: 1.25rem; font-weight: 600; color: var(--brand-olive); padding: 0 4px; }
+.delivery-pick__group + .delivery-pick__group { margin-top: 12px; }
+.delivery-pick__week { margin: 8px 0 6px; font-size: .75rem; letter-spacing: .08em; text-transform: uppercase; font-weight: 700; color: var(--text-muted); }
+.delivery-option { display: flex; align-items: center; gap: 12px; padding: 12px 14px; margin-bottom: 6px; background: var(--surface-white); border: 2px solid transparent; border-radius: var(--radius-md); cursor: pointer; }
+.delivery-option:has(input:checked) { border-color: var(--brand-olive); background: #EDF1E3; }
+.delivery-option input { width: 20px; height: 20px; accent-color: var(--brand-olive); flex: none; }
+.delivery-option__day { font-weight: 600; flex: 1; }
+.delivery-option__tag { font-size: .75rem; font-weight: 700; color: var(--brand-terracotta-dark); background: #F7E6DC; padding: 2px 8px; border-radius: 999px; }
+.delivery-pick__note { margin: 10px 0 0; font-size: .875rem; }

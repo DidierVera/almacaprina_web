@@ -246,12 +246,47 @@ begin
 end;
 $$;
 
+-- Is `d` a delivery day under the schedule `sch`? (blocked dates, extra dates, weekdays per week)
+create or replace function public.is_delivery_day(d date, sch jsonb)
+returns boolean
+language plpgsql immutable
+as $$
+declare
+  monday date;
+  days   jsonb;
+begin
+  if coalesce(sch->'blocked', '[]'::jsonb) ? to_char(d, 'YYYY-MM-DD') then return false; end if;
+  if coalesce(sch->'extra',   '[]'::jsonb) ? to_char(d, 'YYYY-MM-DD') then return true; end if;
+  monday := d - (extract(isodow from d)::integer - 1);
+  days := coalesce(sch->'weeks'->(to_char(monday, 'YYYY-MM-DD')), sch->'defaultDays');
+  return days @> to_jsonb(extract(dow from d)::integer);   -- 0 = Sunday
+end;
+$$;
+
+-- The customer may pick any delivery date from the first possible one up to `chooseWeeks` weeks from today (default 3).
+create or replace function public.is_valid_delivery_date(p_date date, p_now timestamptz default now())
+returns boolean
+language plpgsql stable
+set search_path = public
+as $$
+declare
+  sch     jsonb := (select value from public.settings where key = 'schedule');
+  first_d date  := public.next_delivery_date(p_now);
+  today   date  := (p_now at time zone 'America/Bogota')::date;
+  weeks   integer;
+begin
+  if sch is null or first_d is null or p_date is null then return false; end if;
+  weeks := least(greatest(coalesce(nullif(sch->>'chooseWeeks', '')::integer, 3), 1), 6);
+  return p_date >= first_d and p_date <= today + weeks * 7 and public.is_delivery_day(p_date, sch);
+end;
+$$;
+
 -- ---------------------------------------------------------------------
 -- 6. create_order: the ONLY way the public creates orders
 --    payload = {
 --      customer: {name, phone, email, address, neighborhood, notes},
 --      items:    [{id, qty}],
---      delivery: {lat, lng, km},
+--      delivery: {lat, lng, km, date},   -- date optional: an allowed delivery date chosen by the customer
 --      payment:  {method: 'transfer'|'cash_on_delivery', proofPath}
 --    }
 -- ---------------------------------------------------------------------
@@ -376,7 +411,13 @@ begin
   end if;
   v_fee := v_fee + v_surcharge;
 
-  v_date := public.next_delivery_date();
+  -- The customer picks the delivery date (validated here); without one, the first possible date is used.
+  if coalesce(dlv->>'date', '') ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}$' then
+    v_date := (dlv->>'date')::date;
+    if not public.is_valid_delivery_date(v_date) then raise exception 'INVALID_DELIVERY_DATE'; end if;
+  else
+    v_date := public.next_delivery_date();
+  end if;
   if v_date is null then raise exception 'NO_DELIVERY_DATE'; end if;
 
   -- Anti-abuse: at most 5 orders per phone per hour
@@ -445,7 +486,7 @@ $$;
 
 revoke all on function public.create_order(jsonb), public.get_order_status(uuid), public.top_products(integer) from public;
 grant execute on function public.create_order(jsonb), public.get_order_status(uuid), public.top_products(integer),
-                          public.next_delivery_date(timestamptz), public.is_admin() to anon, authenticated;
+                          public.next_delivery_date(timestamptz), public.is_valid_delivery_date(date, timestamptz), public.is_admin() to anon, authenticated;
 
 -- ---------------------------------------------------------------------
 -- 7. Storage: payment proofs (private) and product images (public)

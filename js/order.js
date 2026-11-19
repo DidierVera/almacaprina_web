@@ -1,7 +1,7 @@
 import { cart } from './cart.js';
 import { CATEGORIES } from './data/defaults.js';
-import { nextDeliveryDate } from './delivery.js';
-import { bogotaNow, dayName, formatKm, formatLong, formatShort, money } from './format.js';
+import { chooseableDeliveryDates } from './delivery.js';
+import { bogotaNow, formatKm, formatLong, formatShort, mondayOf, money } from './format.js';
 import { errorMessage } from './messages.js';
 import { loadLeaflet, OSM_TILES } from './leaflet-loader.js';
 import { findPlaces, normalizeStreet, reversePlace } from './geocode.js';
@@ -43,6 +43,7 @@ const state = {
   proof: null,
   order: null,
   geoRequestId: 0,
+  deliveryDate: null, // the date the customer picked (ISO)
 };
 
 const form = $('detailsForm');
@@ -169,12 +170,62 @@ $('clearBtn').addEventListener('click', () => {
 cart.subscribe(renderBar);
 
 /* ---------------- step 2: details, map and delivery ---------------- */
+const daysBetween = (a, b) => Math.round((Date.parse(`${b}T00:00:00Z`) - Date.parse(`${a}T00:00:00Z`)) / 86_400_000);
+const WEEK_TITLES = ['Esta semana', 'La próxima semana', 'En dos semanas', 'En tres semanas', 'En cuatro semanas', 'En cinco semanas', 'En seis semanas'];
+
+/** The customer picks the delivery day among the next delivery dates (the first one is preselected). */
 function renderDelivery() {
-  const date = nextDeliveryDate(config.schedule);
-  $('deliveryDate').textContent = date ? formatLong(date) : 'Por confirmar';
-  $('deliveryNote').textContent = date
-    ? `Pediste un ${dayName(bogotaNow().iso)}, así que entra en la ruta del ${dayName(date)}. Te avisamos por WhatsApp cuando salgamos.`
-    : 'Te escribiremos para acordar la fecha de entrega.';
+  const dates = chooseableDeliveryDates(config.schedule);
+  const box = $('deliveryOptions');
+  if (!dates.length) {
+    box.replaceChildren();
+    state.deliveryDate = null;
+    $('deliveryNote').textContent = 'Te escribiremos para acordar la fecha de entrega.';
+    return;
+  }
+  if (!dates.includes(state.deliveryDate)) state.deliveryDate = dates[0];
+
+  const thisMonday = mondayOf(bogotaNow().iso);
+  const groups = new Map();
+  for (const date of dates) {
+    const offset = Math.round(daysBetween(thisMonday, mondayOf(date)) / 7);
+    groups.set(offset, [...(groups.get(offset) ?? []), date]);
+  }
+
+  box.replaceChildren(...[...groups].map(([offset, list]) => {
+    const group = document.createElement('div');
+    group.className = 'delivery-pick__group';
+    const title = document.createElement('p');
+    title.className = 'delivery-pick__week';
+    title.textContent = WEEK_TITLES[offset] ?? `En ${offset} semanas`;
+    group.append(title);
+    for (const date of list) {
+      const label = document.createElement('label');
+      label.className = 'delivery-option';
+      const input = document.createElement('input');
+      input.type = 'radio'; input.name = 'deliveryDate'; input.value = date; input.checked = date === state.deliveryDate;
+      input.addEventListener('change', () => { state.deliveryDate = date; renderDeliveryNote(); });
+      const text = document.createElement('span');
+      text.className = 'delivery-option__day';
+      text.textContent = formatLong(date);
+      label.append(input, text);
+      if (date === dates[0]) {
+        const tag = document.createElement('small');
+        tag.className = 'delivery-option__tag';
+        tag.textContent = 'Lo más pronto';
+        label.append(tag);
+      }
+      group.append(label);
+    }
+    return group;
+  }));
+  renderDeliveryNote();
+}
+
+function renderDeliveryNote() {
+  $('deliveryNote').textContent = state.deliveryDate
+    ? `Tu pedido llega el ${formatLong(state.deliveryDate)}. Te avisamos por WhatsApp cuando salgamos.`
+    : '';
 }
 
 function setGeoStatus(text, { error = false } = {}) {
@@ -457,6 +508,7 @@ function renderPayment() {
   $('summaryLines').replaceChildren(
     ...cartLines().map((l) => keyValueRow(`${l.qty} × ${l.product.name}`, money(l.product.price * l.qty))),
     keyValueRow('Domicilio', money(fee)),
+    ...(state.deliveryDate ? [keyValueRow('Entrega', formatLong(state.deliveryDate))] : []),
     keyValueRow('Total', money(total), 'total'),
   );
 
@@ -525,7 +577,7 @@ async function submitOrder() {
         name: f.name.trim(), phone: f.phone.trim(), email: f.email.trim(),
         address: f.address.trim(), neighborhood: f.neighborhood.trim(), city: f.city.trim(), notes: f.notes.trim(),
       },
-      delivery: { km: state.shipping.km, lat: state.location.lat, lng: state.location.lng },
+      delivery: { km: state.shipping.km, lat: state.location.lat, lng: state.location.lng, date: state.deliveryDate },
       payment: { method: state.payment, proof: state.proof },
       consent: { accepted: $('consent').checked, version: POLICY_VERSION },
     });

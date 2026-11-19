@@ -36,3 +36,17 @@ export function upcomingDeliveryDates(schedule, count = 3, now = new Date()) {
   }
   return dates;
 }
+
+/**
+ * Dates the customer can choose from: every delivery date from the first possible one
+ * up to `chooseWeeks` weeks from today (default 3). Mirrored by is_valid_delivery_date() in the database.
+ */
+export function chooseableDeliveryDates(schedule, now = new Date()) {
+  const first = nextDeliveryDate(schedule, now);
+  if (!first) return [];
+  const weeks = Math.min(Math.max(Number(schedule.chooseWeeks) || 3, 1), 6);
+  const end = addDays(bogotaNow(now).iso, weeks * 7);
+  const dates = [];
+  for (let d = first; d <= end; d = addDays(d, 1)) if (isDeliveryDate(d, schedule)) dates.push(d);
+  return dates;
+}

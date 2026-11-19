@@ -6,7 +6,7 @@ import { WEEKDAYS } from '../labels.js';
 import { guarded, h, toast } from '../ui.js';
 
 const WEEKS_AHEAD = 8;
-const EMPTY_SCHEDULE = { defaultDays: [2, 4, 6], weeks: {}, blocked: [], extra: [], cutoffHour: null };
+const EMPTY_SCHEDULE = { defaultDays: [2, 4, 6], weeks: {}, blocked: [], extra: [], cutoffHour: null, chooseWeeks: 3 };
 
 const sortDays = (days) => [...days].sort((a, b) => ((a + 6) % 7) - ((b + 6) % 7)); // Monday first
 const sameDays = (a, b) => sortDays(a).join() === sortDays(b).join();
@@ -54,6 +54,9 @@ export async function mount(container) {
     } }, h('option', { value: '' }, 'Sin hora de corte (cuenta todo el día)'),
     ...Array.from({ length: 24 }, (_, hour) => h('option', { value: String(hour) }, `Desde las ${String(hour).padStart(2, '0')}:00 cuenta como del día siguiente`)));
 
+    const weeks = h('select', { id: 'choose-weeks', value: String(schedule.chooseWeeks ?? 3), onChange: (e) => { schedule.chooseWeeks = Number(e.target.value); markDirty(); } },
+      ...[1, 2, 3, 4, 5, 6].map((n) => h('option', { value: String(n) }, n === 1 ? 'Solo la próxima semana (1 semana)' : `Las próximas ${n} semanas`)));
+
     defaultsEl.replaceChildren(
       h('h2', {}, 'Días de entrega habituales'),
       h('p', { class: 'hint' }, 'Se aplican a todas las semanas que no personalices abajo.'),
@@ -63,7 +66,8 @@ export async function mount(container) {
         schedule.defaultDays = sortDays(set);
         markDirty(); renderDefaults(); renderWeeks();
       }))),
-      h('div', { class: 'field', style: 'margin-top:16px;max-width:460px' }, h('label', { htmlFor: 'cutoff' }, 'Hora de corte (hora de Bogotá)'), cutoff));
+      h('div', { class: 'field', style: 'margin-top:16px;max-width:460px' }, h('label', { htmlFor: 'cutoff' }, 'Hora de corte (hora de Bogotá)'), cutoff),
+      h('div', { class: 'field', style: 'margin-top:16px;max-width:460px' }, h('label', { htmlFor: 'choose-weeks' }, 'Fechas que el cliente puede elegir', h('span', { class: 'hint' }, ' (el cliente escoge entre tus próximos días de entrega)')), weeks));
     restoreFocus();
   }
 

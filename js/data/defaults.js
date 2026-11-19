@@ -16,7 +16,8 @@ export const DEFAULT_CONFIG = {
   // `weeks` is keyed by the MONDAY of each week ("2026-11-09": [1, 4]) and overrides `defaultDays`.
   // `blocked` = dates with no delivery (holidays); `extra` = special delivery dates.
   // `cutoffHour` = hour (0-23, Bogotá) from which an order counts as next day's; null = midnight.
-  schedule: { defaultDays: [2, 4, 6], weeks: {}, blocked: [], extra: [], cutoffHour: null },
+  // `chooseWeeks` = how many weeks ahead the customer can pick the delivery date (1-6).
+  schedule: { defaultDays: [2, 4, 6], weeks: {}, blocked: [], extra: [], cutoffHour: null, chooseWeeks: 3 },
 
   shipping: {
     origin: { lat: 6.0911, lng: -75.6358, label: 'Caldas (Variante)' },
